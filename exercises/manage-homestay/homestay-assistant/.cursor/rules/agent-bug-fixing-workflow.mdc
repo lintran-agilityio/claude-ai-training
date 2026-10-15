@@ -1,0 +1,87 @@
+---
+description: Agent bug fixes — investigate → root cause → plan → explicit approval before any prompt/code change; protect routing; require semantic regression tests. Complements production-bug-debugging.
+globs: apps/agent/**
+alwaysApply: false
+---
+
+# Agent Bug-Fixing Workflow
+
+Complements `production-bug-debugging.mdc`. Use for agent prompts, playbooks, routing, context/state, tool selection/args, booking agent flows, and agent regression tests under `apps/agent/**`.
+
+Do **not** replace the general debugging rule. Do **not** jump from bug report to edits.
+
+## Phases (mandatory order)
+
+```text
+INVESTIGATE → ROOT CAUSE → PLAN → APPROVAL GATE → IMPLEMENT → TEST → VERIFY
+```
+
+### 1. Investigate
+
+Trace how current behavior is produced (message → prompt/playbook → context → intent → dates/entities → tool + args → result → UI). Use repo code, prompts, tests, git history, logs.
+
+**No** source, prompt, test, or config edits in this phase.
+
+### 2. Root cause
+
+State what fails, where incorrect behavior starts, which rule/condition causes it, and why the implementation chooses it (prompt priority, routing, stale context, dates, tool selection/args, result handling, recent change, etc.).
+
+If it previously worked: previous behavior → what changed → which change altered it → why. Do not declare root cause from correlation alone.
+
+**Regression:** Never remove or weaken an existing rule just because it causes the current bug. Preserve the prior fix **and** restore the regressed behavior.
+
+### 3. Plan
+
+Minimal plan must include:
+
+1. Root cause (one sentence)
+2. Smallest safe fix
+3. Exact files and why each changes
+4. **Protected behaviors** that must not change (e.g. book / modify / cancel / room detail / explicit search / date resolution / context rules)
+5. Regression tests (failing case + semantic variants + prior fixes + neighboring intents)
+6. Risk if the change is too broad
+
+### Approval gate
+
+**STOP.** Present:
+
+```text
+ROOT CAUSE / REGRESSION SOURCE / MINIMAL FIX / FILES /
+PROTECTED BEHAVIORS / TEST PLAN / RISKS
+```
+
+Wait for explicit approval (`implement`, `go ahead`, `apply the fix`, `proceed`). Not approval: more context, questions, "looks good" without clear go-ahead.
+
+### 4. Implement
+
+Only the approved plan. Prefer small, explicit diffs in the existing architecture.
+
+Do **not**: rewrite whole prompts, unrelated refactors/renames, schema/API/state/UI changes, silent cleanups, or weaken prior fixes without justification.
+
+If the plan is insufficient: **STOP**, report extra change/files/risk, wait for approval. No silent scope expansion ("while I'm here…").
+
+### 5. Test
+
+Semantic family of the failing intent, not only the reported sentence. Include neighboring intents and, when relevant: fresh vs contextual conversation; absolute/partial/ordinal/relative dates; with/without guests.
+
+Every fix needs a regression test unless there is a valid technical reason not to. Prefer `intent → routing → tool/result` over internal implementation details.
+
+### 6. Verify
+
+Run new + related + routing tests (and typecheck/lint if applicable). Inspect the final diff:
+
+- Outside approved scope?
+- Routing priority, context, tool selection, dates, booking, or UI changed unintentionally?
+- Prior fix removed/weakened?
+
+## Prompt / agent rules
+
+Prompt edits are code changes. Prefer precision over rewrites: fix rule order, overly broad conditions, missing exceptions, or ambiguous wording. Do not paper over conflicts with example piles unless examples clarify the rule.
+
+When explicit user intent conflicts with inferred/stale conversation context:
+
+> **Explicit user intent wins.**
+
+## Final report
+
+Root cause · Fix · Files · Regression tests · Existing tests run · Protected behaviors verified · Scope stayed approved? (yes/no)

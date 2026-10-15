@@ -1,0 +1,37 @@
+{
+  "name": "homestay-assistant",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "build:web": "turbo run build --filter=web",
+    "build:api": "turbo run build --filter=api",
+    "build:agent": "turbo run build --filter=agent",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "dev:agent": "turbo run dev --filter=agent",
+    "start:web": "turbo run start --filter=web",
+    "start:api": "turbo run start --filter=api",
+    "start:agent": "turbo run start --filter=agent",
+    "deploy:web": "fly deploy --config fly.web.toml",
+    "deploy:api": "fly deploy --config fly.api.toml",
+    "deploy:agent": "fly deploy --config fly.agent.toml"
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.9.18",
+    "typescript": "5.9.2"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^3.25.76"
+  }
+}

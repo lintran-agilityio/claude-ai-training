@@ -1,0 +1,85 @@
+---
+description: TypeScript/TSX standards — ES6, JSDoc, imports, and comments
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript Code Standards
+
+## ES6 functions only
+
+Use `const fn = () => {}` or `async () => {}`. Avoid `function` declarations.
+
+```typescript
+// ❌ BAD
+function resolveUserId(params: Params) { ... }
+
+// ✅ GOOD
+const resolveUserId = (params: Params): string | undefined => { ... };
+```
+
+Arrow functions for callbacks; `export const` for module-level functions and components.
+
+## JSDoc on every function
+
+Document **every** function (exported and private) with JSDoc: purpose, `@param`, `@returns`, and `@throws` when relevant.
+
+```typescript
+/**
+ * Resolves the user ID from tool params or the agent session.
+ *
+ * @param params - Tool input; may include an explicit userId
+ * @param resourceId - Agent resource ID from the session context
+ * @returns Resolved user ID, or undefined when neither source is available
+ */
+const resolveUserId = (
+  params: GetBookingsInput,
+  resourceId?: string,
+): string | undefined => { ... };
+```
+
+React components: JSDoc above the component describing props and behavior.
+
+## Comments on complex logic
+
+Add a short comment **above** non-obvious branches, algorithms, side effects, or business rules. Do not comment obvious code.
+
+```typescript
+// Prefer explicit userId; fall back to session resource when omitted
+if (params.userId) {
+  return params.userId;
+}
+```
+
+## Grouped imports
+
+Order imports in labeled groups, separated by a blank line. Use only groups that apply.
+
+| Group | Contents |
+|-------|----------|
+| `// Libs` | Third-party packages (`react`, `zod`, `@mastra/*`, `@copilotkit/*`, `lucide-react`, …) |
+| `// Internal` | Monorepo packages (`@repo/*`) |
+| `// Features` | App feature modules (`@/features/*`) |
+| `// Components` | Shared UI (`@/components/*`) |
+| `// Types` | Type-only imports when kept in a separate block |
+| `// Utils` | Shared utilities (`@/lib/*`, `@/mastra/utils/*`) |
+
+```typescript
+// Libs
+import { createTool } from "@mastra/core/tools";
+import { z } from "zod";
+
+// Internal
+import { TOOL_KEYS } from "@repo/constants/tool-keys";
+import { BookingStatus } from "@repo/types";
+
+// Features
+import { bookingSchema } from "@/mastra/schemas/booking";
+import { getBookings } from "@/mastra/services";
+```
+
+Rules:
+- One blank line between groups; no blank line within a group.
+- Sort imports alphabetically within each group.
+- Use `import type` for type-only imports.
+- `"use client"` / `"use server"` directives stay at the very top, before import groups.

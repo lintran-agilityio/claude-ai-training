@@ -1,0 +1,45 @@
+---
+description: Actionable Generic UI (forms, pickers, confirmations) is the response — no extra assistant text instructing the user to open or use it
+alwaysApply: true
+---
+
+# Generic UI Is the Response
+
+When a response contains a **Generic UI** component that represents an **actionable UI flow**, do **not** generate an additional explanatory assistant text message for opening that UI or instructing the user how to interact with it. The Generic UI itself is the response.
+
+## Actionable flows (no handoff text)
+
+Examples:
+
+- Booking form
+- Confirmation / HITL form (confirm, cancel, modify)
+- Date picker
+- Guest selector
+- Other interactive cards whose primary job is user input or a decision
+
+```
+❌ BAD — UI already shows the booking form
+"The booking form is ready. Please complete the required information."
+
+❌ BAD — UI already shows confirm/cancel
+"Please review the confirmation above and confirm or cancel."
+
+✅ GOOD — emit the Generic UI tool only; no opening/instruction sentence
+(Generic UI card renders; chat has no parallel “please use the form” message)
+```
+
+## Still allowed
+
+- Short conversational replies when **no** actionable Generic UI is shown
+- Brief text after a **non-actionable** result (e.g. empty search, hard error) where there is nothing interactive to act on
+- Answers to explicit user questions that are not “open this form”
+
+## Do not
+
+- Restate fields, labels, or button names the Generic UI already shows
+- Add “please fill out / review / tap …” copy solely to introduce an actionable card
+- Treat TOOL RESULTS “must include guest-facing text” as requiring a handoff sentence when an actionable Generic UI is already the turn’s response
+
+## Related product copy
+
+Mastra `GENERIC_UI_RENDERING` / tool `replyHint`s should stay aligned: for actionable flows, prefer **no** instructional handoff; keep short handoffs only where the UI is informational (e.g. room list) and a one-line next step is still useful.

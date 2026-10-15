@@ -1,0 +1,51 @@
+{
+  "name": "evals",
+  "version": "1.0.0",
+  "description": "Evalite behavioral + deterministic evals for the homestay Mastra agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:deps": "pnpm exec turbo run build --concurrency=1 --filter=@repo/constants --filter=@repo/schemas --filter=@repo/types --filter=@repo/utils",
+    "build:dashboard": "pnpm run build:deps && node --env-file-if-exists=.env scripts/build-dashboard.mjs",
+    "preeval": "pnpm run build:deps",
+    "eval": "node --env-file-if-exists=.env node_modules/evalite/dist/bin.js run",
+    "preeval:deterministic": "pnpm run build:deps",
+    "eval:deterministic": "node --env-file-if-exists=.env node_modules/evalite/dist/bin.js run deterministic",
+    "preeval:tools": "pnpm run build:deps",
+    "eval:tools": "node --env-file-if-exists=.env node_modules/evalite/dist/bin.js run tools",
+    "preeval:conversation": "pnpm run build:deps",
+    "eval:conversation": "node --env-file-if-exists=.env node_modules/evalite/dist/bin.js run conversation",
+    "preeval:serve": "pnpm run build:deps",
+    "eval:serve": "node --env-file-if-exists=.env node_modules/evalite/dist/bin.js serve",
+    "eval:serve:render": "node --import ./scripts/render-evalite-serve.mjs --env-file-if-exists=.env node_modules/evalite/dist/bin.js serve",
+    "serve:dashboard": "node scripts/serve-static.mjs",
+    "vercel:build": "pnpm run build:deps && node scripts/vercel-build.mjs",
+    "check-types": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "comments": {
+    "@mastra/core": "Pinned to the EXACT version apps/agent resolves. The harness instantiates the agent's real Mastra object and shares @mastra/core types (RequestContext, processor step args) with it — a caret range that floated to a different minor would give TypeScript two incompatible copies. Bump this in lockstep with apps/agent/package.json."
+  },
+  "dependencies": {
+    "@mastra/core": "1.43.0",
+    "@repo/constants": "workspace:*",
+    "@repo/schemas": "workspace:*",
+    "@repo/types": "workspace:*",
+    "@repo/utils": "workspace:*",
+    "agent": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "autoevals": "^0.3.0",
+    "evalite": "^0.19.0",
+    "tsx": "^4.22.4",
+    "typescript": "5.9.2",
+    "vitest": "^4.1.11"
+  }
+}

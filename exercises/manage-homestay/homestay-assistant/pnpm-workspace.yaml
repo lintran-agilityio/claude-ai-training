@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  '@scarf/scarf': false
+  autoevals: false
+  better-sqlite3: false
+  esbuild: false
+  sharp: false
+  unrs-resolver: false
+overrides:
+  "typeorm>better-sqlite3": "-"
+patchedDependencies:
+  '@copilotkit/react-core': patches/@copilotkit__react-core.patch

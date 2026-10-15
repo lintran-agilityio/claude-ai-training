@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter=evals vercel:build",
+  "outputDirectory": "apps/evals/evalite-export",
+  "installCommand": "corepack enable && pnpm install --frozen-lockfile --prod=false",
+  "framework": null,
+  "cleanUrls": true
+}

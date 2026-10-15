@@ -1,0 +1,56 @@
+---
+description: Split static values into constants/ and pure helpers into utils/ for features, updates, and fixes
+alwaysApply: true
+---
+
+# Split Constants and Utils
+
+When implementing a feature, updating behavior, or fixing a bug, extract reusable static values and pure helpers out of components, hooks, and stores. Keep UI/orchestration thin.
+
+## Placement
+
+| Kind | Put in | Examples |
+|------|--------|----------|
+| Static values | `features/<feature>/constants/` | Copy strings, labels, phase/status enums, magic numbers, fixed sets/maps |
+| Pure helpers | `features/<feature>/utils/` | Mappers, resolvers, formatters, validators, correlation keys, message builders |
+
+Reuse the feature’s existing `constants/` and `utils/` folders (and barrel `index.ts` exports) when present. Do not invent a parallel structure.
+
+## Rules
+
+- Do **not** hardcode user-facing copy, phase names, or status literals inside components/hooks when they can live in `constants/`.
+- Do **not** leave reusable mapping / phase / validation logic inline in JSX or large components when it belongs in `utils/`.
+- Prefer pure, named exports: `export const FOO = … as const` and `export const resolveBar = (…) => …`.
+- Import from feature barrels when they exist (`@/features/<feature>/constants`, `@/features/<feature>/utils`).
+- Skip extraction only for one-off values used in a single place with no reuse and no clarity gain.
+
+## Examples
+
+```typescript
+// ❌ BAD — copy and phase logic buried in the component
+if (status === "rejected") return <h2>Cancelled by you</h2>;
+
+// ✅ GOOD — constants + util
+// features/booking/constants/confirm-booking-copy.ts
+export const CONFIRM_BOOKING = {
+  rejectedTitle: "Cancelled by you",
+} as const;
+
+// features/booking/utils/create-booking-card-phase.ts
+export const resolveCreateHitlCardPhase = ({ decisionStatus, … }) => { … };
+```
+
+```typescript
+// ❌ BAD — magic strings scattered across files
+outcome?.phase === "success"
+
+// ✅ GOOD — shared constant
+outcome?.phase === CREATE_BOOKING_CARD_PHASE.SUCCESS
+```
+
+## Checklist (before finishing the change)
+
+- [ ] New/changed copy and enums live under `constants/`
+- [ ] New/changed pure helpers live under `utils/`
+- [ ] Components/hooks orchestrate; they do not own reusable data or pure logic
+- [ ] Existing constants/utils reused before adding duplicates

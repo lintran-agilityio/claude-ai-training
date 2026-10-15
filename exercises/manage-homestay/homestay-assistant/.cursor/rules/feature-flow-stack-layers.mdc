@@ -1,0 +1,41 @@
+---
+description: Implement booking-like features as Mastra → CopilotKit HITL → CopilotKit mutation → AG-UI (only if needed) per stack layer
+alwaysApply: true
+---
+
+# Feature Flow Per Stack Layer
+
+When adding or updating an agent feature flow (book / cancel / modify / similar), implement **one layer at a time**. Do not mix orchestration into UI or presentation into Mastra.
+
+## Ownership
+
+| Order | Layer | Path | Owns |
+|------:|-------|------|------|
+| 1 | Mastra | `apps/agent/src/mastra` | Tools, schemas, prompts/playbook, `prepareStep` pins, mutation execute |
+| 2 | CopilotKit HITL | `apps/web` `useHumanInTheLoop` | Confirm/cancel cards, `respond({ confirmed })` |
+| 3 | CopilotKit mutation UI | `apps/web` `useRenderTool` | Headless notice → phase store; same HITL card phases |
+| 4 | AG-UI | `apps/agent/src/ag-ui` | Stream/abort/transcript only when bridge is broken |
+
+Mastra decides **what** happens. CopilotKit UI decides **how it looks**. AG-UI only **bridges**.
+
+## Required sequence
+
+```
+HITL tool → user respond() → mutation tool → headless notice → same-card phase UI
+```
+
+- Mutation tools run only after HITL `confirmed: true`.
+- UI must not call mutation tools directly.
+- Retry = send a normal user message; agent chooses tools.
+- Prefer headless mutation notices (`return null`); no second success card.
+- Same-card phases: `review → submitting → success | failed | cancelled | expired`.
+- Pass `parameters` into mutation notices for correlation-key matching (create/cancel/update).
+- Prefer live Zustand outcomes; on history/refresh, derive success/failed from mutation tool results in `agent.messages` (presentation only — do not rewrite transcript).
+- Keep tool **schemas** stable; update **descriptions** when the UI phase machine owns success/failure.
+
+## Do not
+
+- Put booking phase logic in AG-UI
+- Rewrite transcript/memory in the UI for long-term fixes
+- Expect a separate ConfirmSuccess / ToolSuccessNotice for create/cancel/update
+- Bypass agent orchestration from Retry buttons

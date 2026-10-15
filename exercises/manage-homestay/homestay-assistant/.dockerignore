@@ -1,0 +1,62 @@
+# Keep Fly/Depot build context small. Dockerfile runs pnpm install itself.
+# Prefer simple patterns — Depot/dockerignore ** support is inconsistent.
+
+node_modules
+.git
+.github
+.claude
+.cursor
+.turbo
+
+# Next / Cloudflare / Mastra build outputs
+.next
+.open-next
+.wrangler
+.wrangler-dry
+.wrangler-dry-min
+.mastra
+.turbo
+.data
+.clerk
+dist
+build
+coverage
+out
+
+# Env and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Local DB / analytics artifacts
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.duckdb
+
+# Explicit paths (belt and suspenders) — Windows pnpm symlinks in these
+# trees break Depot with: archive/tar: unknown file mode ?rwxr-xr-x
+apps/web/.next
+apps/web/.open-next
+apps/web/.wrangler
+apps/web/.wrangler-dry
+apps/web/.wrangler-dry-min
+apps/web/.mastra
+apps/web/.data
+apps/web/.turbo
+apps/web/node_modules
+apps/agent/.mastra
+apps/agent/node_modules
+apps/agent/mastra.db
+apps/agent/mastra-studio.db
+apps/agent/src/mastra/public/mastra.duckdb
+apps/api/dist
+apps/api/node_modules
+apps/api/.open-next
+apps/api/.next
+apps/api/.wrangler
+apps/api/.turbo

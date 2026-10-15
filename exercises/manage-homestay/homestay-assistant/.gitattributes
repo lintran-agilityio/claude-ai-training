@@ -1,0 +1,3 @@
+# pnpm applies patches/*.patch at install time — keep them LF on every OS so a
+# Windows checkout (core.autocrlf=true) never hands pnpm a CRLF patch.
+patches/*.patch text eol=lf

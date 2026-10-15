@@ -1,0 +1,42 @@
+---
+description: Never edit build output or dependency files — change the source instead
+alwaysApply: true
+---
+
+# Never Edit Generated or Vendored Files
+
+Edits to build output and dependencies are lost on the next build or install, and they
+silently diverge from source. Always change the source file, then rebuild.
+
+## Off-limits paths
+
+Never create, edit, or delete files under:
+
+- `node_modules/**` (including workspace symlinks such as `node_modules/@repo/*`)
+- `**/dist/**`, `**/build/**`, `**/out/**`
+- `apps/web/.next/**`, `apps/web/.open-next/**`, `apps/web/.wrangler*/**`
+- `apps/agent/.mastra/output/**`
+- `.turbo/**`, `**/.turbo/**`
+
+Reading these files is fine — use them for debugging, stack traces, and checking
+third-party APIs.
+
+## Map output back to source
+
+| You landed in | Edit instead |
+|---------------|--------------|
+| `packages/<pkg>/dist/index.js` | `packages/<pkg>/src/**` |
+| `node_modules/@repo/<pkg>/**` | `packages/<pkg>/src/**` (it is a pnpm symlink) |
+| `apps/agent/.mastra/output/**` | `apps/agent/src/mastra/**` |
+| `apps/web/.next/**` | `apps/web/app/**`, `apps/web/features/**`, `apps/web/components/**` |
+
+```
+❌ Edit apps/agent/.mastra/output/index.mjs to fix a tool description
+✅ Edit apps/agent/src/mastra/tools/booking/create-booking.ts, then rebuild
+```
+
+## Third-party packages
+
+A bug in a `node_modules` package is never fixed by patching it in place. Work around it
+in our own code, upgrade the dependency, or tell the user a patch (e.g. `pnpm patch`) is
+needed — and let them decide.

@@ -1,0 +1,281 @@
+services:
+  # ============================================================
+  # EVALITE DASHBOARD
+  # ============================================================
+  # The suite runs ONCE at build time (`pnpm --filter=evals build:dashboard`),
+  # which exports a static Evalite report plus a landing page into
+  # apps/evals/evalite-export/. `serve:dashboard` then serves that folder — a
+  # ~40-line static server, no long-running Evalite/Fastify process. Storage is
+  # in-memory and fixture-backed: nothing is read from or written to the
+  # production NestJS database, and each deploy is a fresh run (no history).
+  #
+  #   evalite-export/index.html     "Evalite Reports" landing (render-landing-page.mjs)
+  #   evalite-export/report/        the Evalite report SPA  (evalite/export-static)
+  #
+  # The report exposes test prompts, outputs, and tool traces. Restrict access
+  # in Render (IP allow list / access proxy) before sharing this service's URL.
+  - type: web
+    name: homestay-evalite
+    runtime: node
+    plan: starter
+
+    # `evalite` is a devDependency of the `evals` package, so keep dev deps in
+    # the image (`--prod=false`) — the eval run happens here, at build time.
+    # The harness imports the agent from `apps/agent` *source* (via the
+    # `@agent/*` alias) through Vitest's transpiler, so only the `@repo/*`
+    # packages need compiling — `prebuild:dashboard` does that. No `mastra build`.
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile --prod=false
+      pnpm --filter=evals build:dashboard
+
+    # Static file server; binds 0.0.0.0:$PORT itself and adds the SPA fallback
+    # the `/report` subtree needs (apps/evals/scripts/serve-static.mjs).
+    startCommand: pnpm --filter=evals serve:dashboard
+
+    # The static server answers `/` as soon as it is listening.
+    healthCheckPath: /
+
+    buildFilter:
+      paths:
+        - apps/evals/**
+        # eval behavior is evaluated against the agent's source
+        - apps/agent/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      # serve-static.mjs binds this; Render also expects the service on it.
+      - key: PORT
+        value: "10000"
+
+      - key: NODE_ENV
+        value: production
+
+      # Which suite the build evaluates (path substring filter). The
+      # deterministic suite is free and completes within Render's build
+      # window; run the real-LLM `tools` suite locally or in a separate job.
+      - key: EVAL_DASHBOARD_PATH
+        value: deterministic
+
+      # OpenRouter fronts many upstream models on one key, and a ":free" slug
+      # bills nothing — the zero-cost path for this dashboard. Mistral was the
+      # previous choice but its free-tier quota reads
+      # `x-ratelimit-limit-req-minute: 0`, so every call 429s regardless of
+      # pacing; switch back only after activating that tier.
+      - key: AI_PROVIDER
+        value: openrouter
+
+      # OpenRouter API key (openrouter.ai/keys). Add as a Render secret; never
+      # commit it. Free slugs need a key but are not billed.
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+      # Chat model. Benchmarked against the real agent — the only free
+      # tool-caller tested that reproduced gpt-4o-mini's tool sequence on all
+      # four booking flows, forced tool_choice included. Pinned so a default
+      # change can never silently promote this service to a billed slug.
+      - key: OPENROUTER_MODEL
+        value: openrouter/nvidia/nemotron-3.5-lightning:free
+
+      # Prompt-injection detector — fires on EVERY screened message, so it is
+      # pinned free too. A billed slug here outcosts the chat model over a run.
+      - key: AI_SECURITY_MODEL
+        value: openrouter/nvidia/nemotron-3.5-lightning:free
+
+      # Free routes are capped per REQUEST (~20/min), not per token: token
+      # pacing off, request spacing does the work (3100ms => ~19 req/min).
+      # DAILY CEILING: the free tier allows 50 free-model requests/day (1000
+      # once the account holds $10 lifetime credit, which ":free" slugs never
+      # spend). EVAL_DASHBOARD_PATH stays `deterministic` — that suite makes
+      # ZERO provider calls, so a build can never exhaust the quota. Point it
+      # at `tools`/`conversation` only on an account with the raised limit.
+      - key: EVAL_TPM_BUDGET
+        value: "0"
+
+      - key: EVAL_MIN_REQUEST_INTERVAL_MS
+        value: "3100"
+
+      # Evals replace requests to this origin with fixture responses, so the
+      # dashboard never reads or mutates the deployed NestJS database.
+      - key: API_URL
+        value: https://evalite-fixture.invalid
+
+      # Rate-limiter ledger / request-spacing marker + ephemeral Mastra storage.
+      - key: MASTRA_DATA_DIR
+        value: /tmp/mastra-evalite
+
+  # ============================================================
+  # NEXT.JS WEB
+  # ============================================================
+  - type: web
+    name: homestay-web
+    runtime: node
+    plan: starter
+
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm turbo build --filter=web
+
+    startCommand: pnpm --filter=web start
+
+    healthCheckPath: /
+
+    buildFilter:
+      paths:
+        - apps/web/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      - key: NODE_ENV
+        value: production
+
+      # Server-side base URL for the NestJS API (utils/urls.ts reads process.env.API_URL).
+      # Set to the homestay-api service URL, e.g. https://homestay-api-majb.onrender.com
+      # NOTE: getApiUrl() strips trailing slashes, but keep this value slash-free
+      # anyway — the web services concatenate `${API_URL}/rooms`.
+      - key: API_URL
+        sync: false
+
+      # CopilotKit Intelligence (chat runtime + realtime WS proxy in server.mjs).
+      - key: INTELLIGENCE_API_URL
+        sync: false
+      - key: INTELLIGENCE_GATEWAY_WS_URL
+        sync: false
+      - key: INTELLIGENCE_API_KEY
+        sync: false
+
+      # Public hostname(s) for the realtime WS URL rewrite (lib/rewrite-intelligence-ws-url.ts).
+      - key: ALLOWED_PUBLIC_HOSTS
+        sync: false
+
+      # Clerk auth (also read by the in-process Mastra agent's auth middleware).
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+      # The Mastra homestay agent runs in-process in this Next app (see
+      # app/api/copilotkit/[[...slug]]/route.ts). It needs the chat-model key.
+      - key: AI_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+
+  # ============================================================
+  # MASTRA AGENT
+  # ============================================================
+  - type: web
+    name: homestay-agent
+    runtime: node
+    plan: starter
+
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm turbo build --filter=agent
+
+    startCommand: pnpm --filter=agent start
+
+    healthCheckPath: /health
+
+    buildFilter:
+      paths:
+        - apps/agent/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      - key: NODE_ENV
+        value: production
+
+      - key: AI_MODEL
+        sync: false
+
+      - key: OPENAI_API_KEY
+        sync: false
+
+      - key: CEREBRAS_API_KEY
+        sync: false
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homestay-db
+          property: connectionString
+
+  # ============================================================
+  # NESTJS API
+  # ============================================================
+  - type: web
+    name: homestay-api
+    runtime: node
+    plan: starter
+
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm turbo build --filter=api
+
+    startCommand: pnpm --filter=api start:prod
+
+    # Mirrors fly.api.toml's release_command: create/upgrade the schema and seed
+    # the room catalog before the new version goes live. Without this the DB has
+    # no tables and every request 500s.
+    preDeployCommand: pnpm --filter=api db:migrate && pnpm --filter=api db:seed
+
+    # `/` is the health route (AppController.getRoot); there is no `/health` path.
+    healthCheckPath: /
+
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: "10000"
+
+      # Required by ClerkAuthGuard (apps/api/src/auth/clerk-auth.guard.ts) to
+      # verify the web's Clerk JWT. Without it every /bookings route 401s with
+      # "Authentication is not configured". Must match the web service's key.
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: homestay-db
+          property: connectionString
+
+databases:
+  - name: homestay-db
+    plan: basic-256mb

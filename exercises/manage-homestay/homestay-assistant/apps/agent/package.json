@@ -1,0 +1,51 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "predev": "pnpm exec turbo run build --filter=@repo/constants --filter=@repo/schemas --filter=@repo/types --filter=@repo/utils",
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "check-types": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "exports": {
+    ".": "./src/mastra/index.ts",
+    "./copilotkit": "./src/copilotkit.ts",
+    "./db-paths": "./src/mastra/db-paths.ts",
+    "./middleware": "./src/mastra/middleware/index.ts"
+  },
+  "dependencies": {
+    "@ag-ui/client": "^0.0.57",
+    "@ag-ui/core": "^0.0.57",
+    "@ag-ui/mastra": "^1.1.1",
+    "@clerk/backend": "^3.8.1",
+    "@mastra/core": "^1.43.0",
+    "@mastra/duckdb": "^1.4.2",
+    "@mastra/libsql": "^1.13.2",
+    "@mastra/loggers": "^1.1.2",
+    "@mastra/memory": "^1.20.5",
+    "@mastra/observability": "^1.14.3",
+    "@mistralai/mistralai": "^2.6.4",
+    "@repo/constants": "workspace:*",
+    "@repo/schemas": "workspace:*",
+    "@repo/types": "workspace:*",
+    "@repo/utils": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "mastra": "^1.14.0",
+    "tsx": "^4.22.4",
+    "typescript": "5.9.2"
+  }
+}
