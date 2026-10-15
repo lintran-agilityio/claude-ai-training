@@ -1,0 +1,52 @@
+{
+  "name": "@repo/constants",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./agent-keys": {
+      "types": "./dist/agent-keys.d.ts",
+      "default": "./dist/agent-keys.js"
+    },
+    "./agent-names": {
+      "types": "./dist/agent-names.d.ts",
+      "default": "./dist/agent-names.js"
+    },
+    "./tool-keys": {
+      "types": "./dist/tool-keys.d.ts",
+      "default": "./dist/tool-keys.js"
+    },
+    "./tool-purposes": {
+      "types": "./dist/tool-purposes.d.ts",
+      "default": "./dist/tool-purposes.js"
+    },
+    "./message-roles": {
+      "types": "./dist/message-roles.d.ts",
+      "default": "./dist/message-roles.js"
+    },
+    "./prompt-tags": {
+      "types": "./dist/prompt-tags.d.ts",
+      "default": "./dist/prompt-tags.js"
+    },
+    "./thread-events": {
+      "types": "./dist/thread-events.d.ts",
+      "default": "./dist/thread-events.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "5.9.2"
+  }
+}

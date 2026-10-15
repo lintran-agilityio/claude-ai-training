@@ -1,0 +1,57 @@
+diff --git a/dist/copilotkit-CmcMFc8o.mjs b/dist/copilotkit-CmcMFc8o.mjs
+index 9d525055a854a7d4747e49411bca7b3c0631edaa..8a555ee69d66298757045bc317c07b375df28ce9 100644
+--- a/dist/copilotkit-CmcMFc8o.mjs
++++ b/dist/copilotkit-CmcMFc8o.mjs
+@@ -6881,8 +6881,14 @@ function CopilotChatMessageView({ messages = [], assistantMessage, userMessage,
+ 		if (process.env.NODE_ENV !== "production" && scrollElementFromCtx && scrollElementFromCtx.clientHeight === 0) console.warn("[CopilotKit] Chat scroll container has clientHeight=0 — virtualization disabled. Ensure the chat is rendered in a visible container with a non-zero height.");
+ 	}, [scrollElementFromCtx]);
+ 	const shouldVirtualize = !!scrollElement && !children && deduplicatedMessages.length > VIRTUALIZE_THRESHOLD;
++	// [homestay patch] Key measured sizes by message id, not index. Tool results
++	// are spliced in right after their tool-call message, which shifts later rows
++	// to indexes they were never measured at — a 0px row then kept the 100px
++	// estimate and left a blank gap in the chat.
++	const getItemKey = useCallback((index) => deduplicatedMessages[index]?.id ?? index, [deduplicatedMessages]);
+ 	const virtualizer = useVirtualizer({
+ 		count: shouldVirtualize ? deduplicatedMessages.length : 0,
++		getItemKey,
+ 		getScrollElement: () => scrollElement,
+ 		estimateSize: () => 100,
+ 		overscan: 5,
+diff --git a/dist/copilotkit-lHheGQWt.cjs b/dist/copilotkit-lHheGQWt.cjs
+index 494047a43f5fa0e313b89fad19f6b443ec2e303c..119baf05ff2c18cbf433110be46be26d8589ded8 100644
+--- a/dist/copilotkit-lHheGQWt.cjs
++++ b/dist/copilotkit-lHheGQWt.cjs
+@@ -6911,8 +6911,14 @@ function CopilotChatMessageView({ messages = [], assistantMessage, userMessage,
+ 		if (process.env.NODE_ENV !== "production" && scrollElementFromCtx && scrollElementFromCtx.clientHeight === 0) console.warn("[CopilotKit] Chat scroll container has clientHeight=0 — virtualization disabled. Ensure the chat is rendered in a visible container with a non-zero height.");
+ 	}, [scrollElementFromCtx]);
+ 	const shouldVirtualize = !!scrollElement && !children && deduplicatedMessages.length > VIRTUALIZE_THRESHOLD;
++	// [homestay patch] Key measured sizes by message id, not index. Tool results
++	// are spliced in right after their tool-call message, which shifts later rows
++	// to indexes they were never measured at — a 0px row then kept the 100px
++	// estimate and left a blank gap in the chat.
++	const getItemKey = (0, react.useCallback)((index) => deduplicatedMessages[index]?.id ?? index, [deduplicatedMessages]);
+ 	const virtualizer = (0, _tanstack_react_virtual.useVirtualizer)({
+ 		count: shouldVirtualize ? deduplicatedMessages.length : 0,
++		getItemKey,
+ 		getScrollElement: () => scrollElement,
+ 		estimateSize: () => 100,
+ 		overscan: 5,
+diff --git a/dist/v2/index.umd.js b/dist/v2/index.umd.js
+index 111f98c6d034170bbea73eae12b6add47fbde9e5..672ff07220e7b29817acfc8f1ef35ccbad01eb93 100644
+--- a/dist/v2/index.umd.js
++++ b/dist/v2/index.umd.js
+@@ -6896,8 +6896,14 @@ window.parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/sandbox-proxy-
+ 			if (process.env.NODE_ENV !== "production" && scrollElementFromCtx && scrollElementFromCtx.clientHeight === 0) console.warn("[CopilotKit] Chat scroll container has clientHeight=0 — virtualization disabled. Ensure the chat is rendered in a visible container with a non-zero height.");
+ 		}, [scrollElementFromCtx]);
+ 		const shouldVirtualize = !!scrollElement && !children && deduplicatedMessages.length > VIRTUALIZE_THRESHOLD;
++		// [homestay patch] Key measured sizes by message id, not index. Tool results
++		// are spliced in right after their tool-call message, which shifts later rows
++		// to indexes they were never measured at — a 0px row then kept the 100px
++		// estimate and left a blank gap in the chat.
++		const getItemKey = (0, react.useCallback)((index) => deduplicatedMessages[index]?.id ?? index, [deduplicatedMessages]);
+ 		const virtualizer = (0, _tanstack_react_virtual.useVirtualizer)({
+ 			count: shouldVirtualize ? deduplicatedMessages.length : 0,
++			getItemKey,
+ 			getScrollElement: () => scrollElement,
+ 			estimateSize: () => 100,
+ 			overscan: 5,
