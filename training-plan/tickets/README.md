@@ -1,6 +1,6 @@
 # Training Tickets
 
-One ticket per day, following the [Dojo plan](https://dojo.agilityio.dev/schedule.html) (Developer track). Open a ticket, work through its checklist, tick the boxes, and attach evidence in `exercises/`.
+One ticket per day, following the [Dojo plan](https://dojo.agilityio.dev/schedule.html) (Developer track). Open a ticket, work through its checklist, tick the boxes, and attach evidence in [`exercises/`](../../exercises/README.md).
 
 | Day | Ticket | Phase | Checkpoint |
 | --- | --- | --- | --- |

@@ -41,6 +41,20 @@ Beyond the 4Ds, I also want to get comfortable with Claude Code's advanced featu
 - **Days 4–11:** Developer track (Claude Code Desktop).
 - **Days 12–15:** cross-functional capstone (mini-product, lead plays the client).
 
+## Repository structure
+
+```text
+claude-ai-training/
+├── training-plan/        # What to learn
+│   ├── lessons/          #   daily study notes (YYYY-MM-DD.md)
+│   └── tickets/          #   one ticket per day (day-01.md ... day-15.md)
+├── exercises/            # Hands-on work across the whole training
+│   ├── day-XX-exercises.md   daily evidence and notes
+│   └── manage-homestay/      practice project (Claude Project instructions, tasks, code)
+├── scripts/              # create-issues.ps1 (import tickets to GitLab)
+└── .gitlab/              # issue templates
+```
+
 ## Getting started
 
 ```bash
