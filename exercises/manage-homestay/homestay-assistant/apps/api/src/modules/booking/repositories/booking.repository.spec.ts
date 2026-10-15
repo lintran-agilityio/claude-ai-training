@@ -11,6 +11,10 @@ import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
 import { BookingStatus } from '../../../types/enum';
 
+// `@repo/utils` ships as ESM, which jest (CommonJS) cannot load. The repository
+// only uses it in `findAll`, not in the overlap query under test.
+jest.mock('@repo/utils', () => ({ extractRoomNameQuery: jest.fn() }));
+
 /**
  * Integration test: the overlap rule lives in a SQL query, so it needs a real
  * PostgreSQL. It builds a throwaway schema from the entities and drops it at
