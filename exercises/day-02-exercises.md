@@ -66,7 +66,7 @@ Ticket: [BUG-HS-001](manage-homestay/tickets/bug-hs-001.md) (seeded on branch `f
 
 **Boundary table** (existing booking 10-12)
 
-| New stay | Should be | Expected after fix | Current (by code) |
+| New stay | Should be | Expected after fix | Before fix (test run) |
 |---|---|---|---|
 | 12-14 (starts on old check-out) | available | available | **blocked** |
 | 8-10 (ends on old check-in) | available | available | available |
@@ -83,4 +83,9 @@ Only the "new check-in == old check-out" case is wrong, which matches the report
 
 **Tests that should exist:** the boundary table above (HS-BE-04 acceptance criteria), plus edit a booking with `excludeBookingId` and a cancelled booking not blocking. `apps/api/test` currently has only the default e2e spec.
 
-**Status of evidence:** root cause found by reading the code and tracing the SQL. **Not yet reproduced at runtime** because Docker/Postgres was not running. Run the steps above before and after the fix to confirm.
+**Evidence:** reproduced with an integration test against PostgreSQL 16 (Docker), [booking.repository.spec.ts](manage-homestay/homestay-assistant/apps/api/src/modules/booking/repositories/booking.repository.spec.ts).
+- Before the fix (commit `66d8f73`): `1 failed, 8 passed`. The only failure is "free when new stay starts on the existing check-out day (12-14)": expected `false`, received `true`.
+- After the fix (commit `57e91a2`, `>=` changed to `>`): `9 passed`.
+- Reproduced at repository level, not through the HTTP endpoint or the AI assistant.
+
+**Commands:** `docker compose up -d` then `pnpm exec jest booking.repository` in `apps/api`.
