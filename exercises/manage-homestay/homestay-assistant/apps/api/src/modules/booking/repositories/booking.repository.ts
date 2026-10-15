@@ -106,7 +106,7 @@ export class BookingRepository {
       .andWhere('booking.checkInDate < :checkOutDate', {
         checkOutDate: toDateKey(checkOutDate),
       })
-      .andWhere('booking.checkOutDate >= :checkInDate', {
+      .andWhere('booking.checkOutDate > :checkInDate', {
         checkInDate: toDateKey(checkInDate),
       });
 
