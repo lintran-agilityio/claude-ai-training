@@ -145,6 +145,10 @@ export class BookingService {
     dto: UpdateBookingDto,
     userId: string,
   ): Promise<BookingResponseDto> {
+    if (dto.status === BookingStatus.CANCELLED) {
+      return this.cancel(id, userId);
+    }
+
     const booking = await this.getOwnedBookingOrThrow(id, userId);
 
     if (booking.status === BookingStatus.CANCELLED) {
@@ -172,27 +176,25 @@ export class BookingService {
 
     const nextStatus = dto.status ?? booking.status;
 
-    if (nextStatus !== BookingStatus.CANCELLED) {
-      const isStayChange =
-        dto.checkInDate !== undefined ||
-        dto.checkOutDate !== undefined ||
-        dto.guests !== undefined;
+    const isStayChange =
+      dto.checkInDate !== undefined ||
+      dto.checkOutDate !== undefined ||
+      dto.guests !== undefined;
 
-      if (isStayChange) {
-        this.assertModifiable(booking);
-      }
+    if (isStayChange) {
+      this.assertModifiable(booking);
+    }
 
-      const shouldRecheckAvailability =
-        dto.checkInDate !== undefined || dto.checkOutDate !== undefined;
+    const shouldRecheckAvailability =
+      dto.checkInDate !== undefined || dto.checkOutDate !== undefined;
 
-      if (shouldRecheckAvailability) {
-        await this.assertRoomAvailable(
-          booking.roomId,
-          checkInDate,
-          checkOutDate,
-          booking.id,
-        );
-      }
+    if (shouldRecheckAvailability) {
+      await this.assertRoomAvailable(
+        booking.roomId,
+        checkInDate,
+        checkOutDate,
+        booking.id,
+      );
     }
 
     const now = new Date();
@@ -203,16 +205,35 @@ export class BookingService {
       guests: nextGuests,
       totalPrice: nights * room.pricePerNight,
       status: nextStatus,
-      cancelledAt:
-        nextStatus === BookingStatus.CANCELLED ? now : booking.cancelledAt,
       updatedAt: now,
     });
     const refreshed = await this.bookingRepository.findById(updated.id);
     return toBookingResponseDto(refreshed ?? updated);
   }
 
+  /**
+   * Cancelling only flips the status. It must not re-validate the room's
+   * current capacity/slots or re-price the stay: the homestay can change the
+   * room after the guest booked, and the guest must still be able to leave.
+   */
   async cancel(id: string, userId: string): Promise<BookingResponseDto> {
-    return this.update(id, { status: BookingStatus.CANCELLED }, userId);
+    const booking = await this.getOwnedBookingOrThrow(id, userId);
+
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cancelled bookings cannot be updated');
+    }
+
+    this.assertValidStatusTransition(booking.status, BookingStatus.CANCELLED);
+
+    const now = new Date();
+    const updated = await this.bookingRepository.save({
+      ...booking,
+      status: BookingStatus.CANCELLED,
+      cancelledAt: now,
+      updatedAt: now,
+    });
+    const refreshed = await this.bookingRepository.findById(updated.id);
+    return toBookingResponseDto(refreshed ?? updated);
   }
 
   /**
