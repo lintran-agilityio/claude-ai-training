@@ -28,6 +28,17 @@ import { toBookingResolution } from '@/modules/booking/mappers/booking-resolutio
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
 import { toRoomResponseDto } from '@/modules/rooms/mappers/room.mapper';
 
+const ALLOWED_STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
+  [BookingStatus.PENDING]: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
+  [BookingStatus.CONFIRMED]: [
+    BookingStatus.CHECKED_IN,
+    BookingStatus.CANCELLED,
+  ],
+  [BookingStatus.CHECKED_IN]: [BookingStatus.CHECKED_OUT],
+  [BookingStatus.CHECKED_OUT]: [],
+  [BookingStatus.CANCELLED]: [],
+};
+
 @Injectable()
 export class BookingService {
   constructor(
@@ -391,13 +402,9 @@ export class BookingService {
       return;
     }
 
-    if (current === BookingStatus.CANCELLED) {
-      throw new BadRequestException('Cancelled bookings cannot change status');
-    }
-
-    if (current === BookingStatus.CONFIRMED && next === BookingStatus.PENDING) {
+    if (!ALLOWED_STATUS_TRANSITIONS[current].includes(next)) {
       throw new BadRequestException(
-        'Confirmed bookings cannot revert to pending',
+        `Invalid status transition from ${current} to ${next}`,
       );
     }
   }

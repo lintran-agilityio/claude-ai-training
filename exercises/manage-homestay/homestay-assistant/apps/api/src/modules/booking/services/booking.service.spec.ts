@@ -242,3 +242,88 @@ describe('BookingService.create', () => {
     );
   });
 });
+
+describe('BookingService.update status transitions', () => {
+  const { PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED } =
+    BookingStatus;
+  const userId = 'guest-a';
+  const room = {
+    id: 'room-1',
+    capacity: 4,
+    availableSlots: 1,
+    pricePerNight: 100,
+  } as RoomEntity;
+
+  const allowed: [BookingStatus, BookingStatus][] = [
+    [PENDING, CONFIRMED],
+    [PENDING, CANCELLED],
+    [CONFIRMED, CHECKED_IN],
+    [CONFIRMED, CANCELLED],
+    [CHECKED_IN, CHECKED_OUT],
+  ];
+  const all = Object.values(BookingStatus);
+  const rejected = all.flatMap((from) =>
+    all
+      .filter(
+        (to) =>
+          from !== to && !allowed.some(([f, t]) => f === from && t === to),
+      )
+      .map((to): [BookingStatus, BookingStatus] => [from, to]),
+  );
+
+  const buildService = (status: BookingStatus) => {
+    const booking = {
+      id: 'booking-1',
+      userId,
+      roomId: room.id,
+      checkInDate: '2030-01-10',
+      checkOutDate: '2030-01-12',
+      guests: 2,
+      totalPrice: 200,
+      status,
+      cancelledAt: null,
+    } as unknown as BookingEntity;
+    const bookingRepository = {
+      findById: jest.fn().mockResolvedValue(booking),
+      save: jest.fn().mockImplementation((b: BookingEntity) => {
+        Object.assign(booking, b);
+        return Promise.resolve(booking);
+      }),
+    };
+    const service = new BookingService(
+      bookingRepository as unknown as BookingRepository,
+      {
+        findById: jest.fn().mockResolvedValue(room),
+      } as unknown as RoomsRepository,
+      {} as never,
+    );
+    return { service, bookingRepository };
+  };
+
+  it.each(allowed)('allows %s -> %s', async (from, to) => {
+    const { service, bookingRepository } = buildService(from);
+
+    const result = await service.update('booking-1', { status: to }, userId);
+
+    expect(result.status).toBe(to);
+    expect(bookingRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(rejected)('rejects %s -> %s', async (from, to) => {
+    const { service, bookingRepository } = buildService(from);
+
+    await expect(
+      service.update('booking-1', { status: to }, userId),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+
+  it.each(all)('treats %s -> %s as a no-op transition', async (status) => {
+    if (status === CANCELLED) return;
+    const { service } = buildService(status);
+
+    const result = await service.update('booking-1', { status }, userId);
+
+    expect(result.status).toBe(status);
+  });
+});
