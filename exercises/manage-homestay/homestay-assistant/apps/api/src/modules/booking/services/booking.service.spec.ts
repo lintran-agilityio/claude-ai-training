@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
@@ -144,5 +148,97 @@ describe('BookingService.update (regression guard for BUG-HS-005)', () => {
       service.update('booking-1', { guests: 5 }, 'guest-a'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Unit test (mocked repositories) for BookingService.create: overlapping
+ * stays, same-day check-in/out and per-night pricing.
+ */
+describe('BookingService.create', () => {
+  const userId = 'guest-a';
+  const room = {
+    id: 'room-1',
+    capacity: 4,
+    availableSlots: 1,
+    pricePerNight: 100,
+  } as RoomEntity;
+
+  let bookingRepository: {
+    save: jest.Mock;
+    findById: jest.Mock;
+    hasOverlappingBooking: jest.Mock;
+  };
+  let service: BookingService;
+
+  const dto = (checkInDate: string, checkOutDate: string) => ({
+    roomId: room.id,
+    checkInDate,
+    checkOutDate,
+    guests: 2,
+  });
+
+  beforeEach(() => {
+    bookingRepository = {
+      save: jest
+        .fn()
+        .mockImplementation((b: BookingEntity) => Promise.resolve(b)),
+      findById: jest.fn().mockResolvedValue(null),
+      hasOverlappingBooking: jest.fn().mockResolvedValue(false),
+    };
+    service = new BookingService(
+      bookingRepository as unknown as BookingRepository,
+      {
+        findById: jest.fn().mockResolvedValue(room),
+      } as unknown as RoomsRepository,
+      { findOne: jest.fn().mockResolvedValue({ id: userId }) } as never,
+    );
+  });
+
+  it('rejects an overlapping booking (double booking)', async () => {
+    bookingRepository.hasOverlappingBooking.mockResolvedValue(true);
+
+    await expect(
+      service.create(dto('2030-01-10', '2030-01-12'), userId),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('allows check-in on the same day another guest checks out', async () => {
+    // Repository reports no overlap for a back-to-back stay (checkout == checkin).
+    await service.create(dto('2030-01-12', '2030-01-14'), userId);
+
+    expect(bookingRepository.hasOverlappingBooking).toHaveBeenCalledWith(
+      room.id,
+      new Date('2030-01-12'),
+      new Date('2030-01-14'),
+      undefined,
+    );
+    expect(bookingRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects check-in and check-out on the same day', async () => {
+    await expect(
+      service.create(dto('2030-01-10', '2030-01-10'), userId),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects check-out before check-in', async () => {
+    await expect(
+      service.create(dto('2030-01-12', '2030-01-10'), userId),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it.each([
+    ['1 night', '2030-01-10', '2030-01-11', 100],
+    ['2 nights', '2030-01-10', '2030-01-12', 200],
+    ['5 nights across a month end', '2030-01-29', '2030-02-03', 500],
+  ])('prices per night: %s', async (_label, checkIn, checkOut, totalPrice) => {
+    await service.create(dto(checkIn, checkOut), userId);
+
+    expect(bookingRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ totalPrice }),
+    );
   });
 });
