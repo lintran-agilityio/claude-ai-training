@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { addDays, isEmptyDateValue, resolveDateOrToday } from '@/utils';
 import {
   GetRoomByIdQueryDto,
   GetAvailableRoomsQueryDto,
+  CreateRoomDto,
+  UpdateRoomDto,
   RoomResponseDto,
 } from '@/modules/rooms/dto';
 import { toRoomResponseDto } from '@/modules/rooms/mappers/room.mapper';
@@ -105,5 +113,94 @@ export class RoomsService {
     }
 
     return response;
+  }
+
+  /**
+   * Creates a room.
+   *
+   * @throws BadRequestException when the name is blank or slots exceed capacity
+   * @throws ConflictException when a room with the same name exists
+   */
+  async createRoom(dto: CreateRoomDto): Promise<RoomResponseDto> {
+    const name = dto.name.trim();
+    if (!name) {
+      throw new BadRequestException('Room name must not be blank');
+    }
+    this.assertSlotsWithinCapacity(dto.availableSlots, dto.capacity);
+    await this.assertNameFree(name);
+
+    const room = await this.roomsRepository.create({
+      ...dto,
+      name,
+      id: randomUUID(),
+    });
+    return toRoomResponseDto(room);
+  }
+
+  /**
+   * Updates the given fields of a room.
+   *
+   * @throws NotFoundException when the room does not exist
+   * @throws BadRequestException on an empty update or slots above capacity
+   * @throws ConflictException when the new name is already taken
+   */
+  async updateRoom(id: string, dto: UpdateRoomDto): Promise<RoomResponseDto> {
+    const room = await this.roomsRepository.findById(id);
+    if (!room) {
+      throw new NotFoundException(`Room with id "${id}" not found`);
+    }
+    if (Object.keys(dto).length === 0) {
+      throw new BadRequestException('No fields to update');
+    }
+
+    if (dto.name !== undefined) {
+      const name = dto.name.trim();
+      if (!name) {
+        throw new BadRequestException('Room name must not be blank');
+      }
+      dto = { ...dto, name };
+      if (name.toLowerCase() !== room.name.toLowerCase()) {
+        await this.assertNameFree(name);
+      }
+    }
+
+    this.assertSlotsWithinCapacity(
+      dto.availableSlots ?? room.availableSlots,
+      dto.capacity ?? room.capacity,
+    );
+
+    Object.assign(room, dto);
+    return toRoomResponseDto(await this.roomsRepository.save(room));
+  }
+
+  /**
+   * Deletes a room.
+   *
+   * @throws NotFoundException when the room does not exist
+   * @throws ConflictException when the room has active bookings
+   */
+  async deleteRoom(id: string): Promise<void> {
+    const room = await this.roomsRepository.findById(id);
+    if (!room) {
+      throw new NotFoundException(`Room with id "${id}" not found`);
+    }
+    if (await this.roomsRepository.hasActiveBookings(id)) {
+      throw new ConflictException(
+        'Room has active bookings and cannot be deleted',
+      );
+    }
+    await this.roomsRepository.remove(room);
+  }
+
+  private assertSlotsWithinCapacity(slots: number, capacity: number): void {
+    if (slots > capacity) {
+      throw new BadRequestException('availableSlots must not exceed capacity');
+    }
+  }
+
+  private async assertNameFree(name: string): Promise<void> {
+    if (await this.roomsRepository.findByName(name)) {
+      throw new ConflictException(`Room named "${name}" already exists`);
+    }
   }
 }

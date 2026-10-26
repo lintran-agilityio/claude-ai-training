@@ -3,6 +3,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RoomsService } from './modules/rooms/services/rooms.service';
 
+// ESM workspace packages cannot be loaded by jest (CommonJS).
+jest.mock('@repo/utils', () => ({ extractRoomNameQuery: jest.fn() }));
+jest.mock('@repo/constants', () => ({
+  FIND_ROOM_SORT: {},
+  FIND_ROOM_SORT_VALUES: [],
+}));
+
 describe('AppController', () => {
   let appController: AppController;
 
