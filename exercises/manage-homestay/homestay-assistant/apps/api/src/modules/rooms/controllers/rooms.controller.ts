@@ -1,8 +1,20 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { GetAvailableRoomsQueryDto } from '@/modules/rooms/dto/get-available-rooms-query.dto';
 import { GetRoomByIdQueryDto } from '@/modules/rooms/dto/get-room-by-id-query.dto';
+import { CreateRoomDto } from '@/modules/rooms/dto/create-room.dto';
+import { UpdateRoomDto } from '@/modules/rooms/dto/update-room.dto';
 import { RoomResponseDto } from '@/modules/rooms/dto/room-response.dto';
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 
@@ -31,5 +43,29 @@ export class RoomsController {
     @Query() query: GetRoomByIdQueryDto,
   ): Promise<RoomResponseDto> {
     return this.roomsService.getRoomById(id, query);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a room' })
+  @ApiOkResponse({ type: RoomResponseDto })
+  createRoom(@Body() dto: CreateRoomDto): Promise<RoomResponseDto> {
+    return this.roomsService.createRoom(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a room' })
+  @ApiOkResponse({ type: RoomResponseDto })
+  updateRoom(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoomDto,
+  ): Promise<RoomResponseDto> {
+    return this.roomsService.updateRoom(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a room without active bookings' })
+  deleteRoom(@Param('id') id: string): Promise<void> {
+    return this.roomsService.deleteRoom(id);
   }
 }

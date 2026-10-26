@@ -70,6 +70,36 @@ export class RoomsRepository {
     return qb.getMany();
   }
 
+  async findByName(name: string): Promise<RoomEntity | null> {
+    return this.roomRepository
+      .createQueryBuilder('room')
+      .where('LOWER(room.name) = LOWER(:name)', { name })
+      .getOne();
+  }
+
+  async create(data: Partial<RoomEntity>): Promise<RoomEntity> {
+    return this.roomRepository.save(this.roomRepository.create(data));
+  }
+
+  async save(room: RoomEntity): Promise<RoomEntity> {
+    return this.roomRepository.save(room);
+  }
+
+  async remove(room: RoomEntity): Promise<void> {
+    await this.roomRepository.remove(room);
+  }
+
+  async hasActiveBookings(roomId: string): Promise<boolean> {
+    const count = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .where('booking.roomId = :roomId', { roomId })
+      .andWhere('booking.status IN (:...activeStatuses)', {
+        activeStatuses: ACTIVE_BOOKING_STATUSES,
+      })
+      .getCount();
+    return count > 0;
+  }
+
   async findById(id: string, userId?: string): Promise<RoomEntity | null> {
     if (!userId) {
       return this.roomRepository.findOne({ where: { id } });
