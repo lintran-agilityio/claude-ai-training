@@ -35,12 +35,16 @@ process.stdin
     )
       process.exit(0);
 
-    const r = spawnSync("npx", ["prettier", "--write", `"${normalized}"`], {
-      cwd: projectDir,
-      encoding: "utf8",
-      shell: true,
-      timeout: 30000,
-    });
+    const r = spawnSync(
+      "pnpm",
+      ["exec", "prettier", "--write", `"${normalized}"`],
+      {
+        cwd: projectDir,
+        encoding: "utf8",
+        shell: true,
+        timeout: 30000,
+      },
+    );
 
     if (r.status !== 0) {
       const message = `${r.stdout || ""}\n${r.stderr || ""}`.trim();

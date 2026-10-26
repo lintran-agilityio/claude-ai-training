@@ -29,7 +29,7 @@ const FORBIDDEN = [
     /\b(curl|wget|iwr|Invoke-WebRequest)\b.*\|\s*(sh|bash|zsh|iex|Invoke-Expression)\b/i,
     "piping a download into a shell",
   ],
-  [/\bnpm\s+publish\b/i, "npm publish"],
+  [/\bpnpm\s+publish\b/i, "pnpm publish"],
   [
     /\b(shutdown|reboot|mkfs|diskpart)\b|\bformat\s+[a-z]:/i,
     "system-level destructive command",

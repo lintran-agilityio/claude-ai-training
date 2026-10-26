@@ -29,8 +29,8 @@ process.stdin
     );
 
     const r = spawnSync(
-      "npx",
-      ["jest", "modules/booking", "--silent", "--passWithNoTests"],
+      "pnpm",
+      ["exec", "jest", "modules/booking", "--silent", "--passWithNoTests"],
       {
         cwd: apiDir,
         encoding: "utf8",
