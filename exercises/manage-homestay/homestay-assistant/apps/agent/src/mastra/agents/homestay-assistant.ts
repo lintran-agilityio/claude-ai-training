@@ -41,6 +41,7 @@ import {
 import { securityInputProcessor } from "@/mastra/processors/security-input.processors";
 import { BookingFormPrefillProcessor } from "@/mastra/processors/booking-form-prefill.processor";
 import { CompareRoomsCandidatesProcessor } from "@/mastra/processors/compare-rooms-candidates.processor";
+import { logOpenAIMissingItemRule } from "@/mastra/processors/log-openai-missing-item.rule";
 import { enforceBookingStep } from "@/mastra/utils/step-machine";
 
 const agentSetupLogger = new PinoLogger({
@@ -115,6 +116,16 @@ export const homestayAssistant = new Agent({
     // from the outbound prompt only (memory / UI keep the full trace). OpenAI
     // has no such history, so the processor is skipped there.
     ...(IS_CEREBRAS_MODEL ? [new ProviderHistoryCompat()] : []),
+    // OpenAI Responses rejects recalled `fc_…` item ids it no longer stores
+    // (`Item with id 'fc_…' not found`). Log-only rule: records which recalled
+    // messages carry those ids; it does not mutate history or retry.
+    ...(IS_OPENAI_MODEL
+      ? [
+          new ProviderHistoryCompat({
+            additionalRules: [logOpenAIMissingItemRule],
+          }),
+        ]
+      : []),
   ],
   memory: new Memory({
     options: {
