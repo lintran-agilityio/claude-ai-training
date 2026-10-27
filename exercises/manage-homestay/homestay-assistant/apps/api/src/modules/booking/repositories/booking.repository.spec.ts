@@ -10,6 +10,7 @@ import { RoomEntity } from '@/modules/rooms/entities/room.entity';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
 import { BookingStatus } from '../../../types/enum';
+import { toDateKey } from '@/utils';
 
 // `@repo/utils` ships as ESM, which jest (CommonJS) cannot load. The repository
 // only uses it in `findAll`, not in the overlap query under test.
@@ -134,5 +135,81 @@ describe('BookingRepository.hasOverlappingBooking', () => {
     await expect(
       repository.hasOverlappingBooking(roomId, day(10), day(12), existing.id),
     ).resolves.toBe(false);
+  });
+
+  describe('findAll upcoming check-in range', () => {
+    const offsetDate = (days: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return toDateKey(date);
+    };
+
+    const addStay = (
+      checkInOffset: number,
+      status = BookingStatus.CONFIRMED,
+    ) =>
+      bookings.save({
+        id: crypto.randomUUID(),
+        userId: 'guest-a',
+        roomId,
+        checkInDate: offsetDate(checkInOffset),
+        checkOutDate: offsetDate(checkInOffset + 2),
+        guests: 1,
+        totalPrice: 100,
+        status,
+      });
+
+    const findUpcoming = () =>
+      repository.findAll({
+        userId: 'guest-a',
+        checkInFrom: offsetDate(0),
+        checkInTo: offsetDate(3),
+      });
+
+    beforeEach(async () => {
+      await bookings.clear();
+    });
+
+    it('returns check-ins from today up to, but excluding, checkInTo', async () => {
+      await addStay(0);
+      await addStay(2);
+      await addStay(3); // checkInTo is exclusive
+      await addStay(-1); // already started before the range
+
+      const result = await findUpcoming();
+
+      expect(result.map((b) => b.checkInDate).sort()).toEqual([
+        offsetDate(0),
+        offsetDate(2),
+      ]);
+    });
+
+    it.each([
+      BookingStatus.CHECKED_IN,
+      BookingStatus.CHECKED_OUT,
+      BookingStatus.CANCELLED,
+    ])('excludes a %s booking', async (status) => {
+      await addStay(1, status);
+
+      await expect(findUpcoming()).resolves.toHaveLength(0);
+    });
+
+    it('includes PENDING and CONFIRMED bookings', async () => {
+      await addStay(1, BookingStatus.PENDING);
+      await addStay(1, BookingStatus.CONFIRMED);
+
+      await expect(findUpcoming()).resolves.toHaveLength(2);
+    });
+
+    it('does not apply the range unless both bounds are present', async () => {
+      await addStay(5);
+
+      const result = await repository.findAll({
+        userId: 'guest-a',
+        checkInFrom: offsetDate(0),
+      });
+
+      expect(result).toHaveLength(1);
+    });
   });
 });

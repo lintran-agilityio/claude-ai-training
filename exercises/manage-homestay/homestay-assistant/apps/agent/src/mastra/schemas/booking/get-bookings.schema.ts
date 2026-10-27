@@ -7,6 +7,8 @@ export const getBookingsOutputSchema = z.object({
   bookings: z.array(bookingSchema),
   /** Echoed from input — FE uses this to skip the booking-list card on purpose:"resolve". */
   purpose: getBookingsInputSchema.shape.purpose,
+  /** Echoed from input — drives the "no upcoming check-ins" reply hint. */
+  upcomingCheckIns: getBookingsInputSchema.shape.upcomingCheckIns,
 });
 
 export type GetBookingsOutput = z.infer<typeof getBookingsOutputSchema>;

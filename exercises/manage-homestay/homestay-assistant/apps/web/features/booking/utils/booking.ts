@@ -30,6 +30,17 @@ export const getBookingStatusMeta = (status: string): BookingStatusMeta => {
         className:
           "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
       };
+    case BookingStatus.CHECKED_IN.toUpperCase():
+      return {
+        label: "Checked in",
+        className:
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      };
+    case BookingStatus.CHECKED_OUT.toUpperCase():
+      return {
+        label: "Checked out",
+        className: "border-border bg-muted text-muted-foreground",
+      };
     case BookingStatus.CANCELLED.toUpperCase():
       return {
         label: "Cancelled",
@@ -91,8 +102,13 @@ export const isUpdateBookingSuccess = (
   return parsed.status.toLowerCase() !== BookingStatus.CANCELLED.toLowerCase();
 };
 
+/** Only PENDING and CONFIRMED bookings can still be cancelled or modified. */
+const isActionableStatus = (status: string) =>
+  normalizeStatus(status) === BookingStatus.PENDING ||
+  normalizeStatus(status) === BookingStatus.CONFIRMED;
+
 export const isBookingCancellable = (status: string, checkOutDate: string) => {
-  if (status.toLowerCase() === BookingStatus.CANCELLED) {
+  if (!isActionableStatus(status)) {
     return false;
   }
 
@@ -105,7 +121,7 @@ export const isBookingCancellable = (status: string, checkOutDate: string) => {
  * cancellation ({@link isBookingCancellable}) is still allowed separately.
  */
 export const isBookingModifiable = (status: string, checkInDate: string) => {
-  if (status.toLowerCase() === BookingStatus.CANCELLED) {
+  if (!isActionableStatus(status)) {
     return false;
   }
 
