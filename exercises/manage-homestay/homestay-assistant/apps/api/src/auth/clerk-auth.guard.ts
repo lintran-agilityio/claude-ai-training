@@ -2,8 +2,11 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { verifyToken } from '@clerk/backend';
 import {
   TokenVerificationError,
@@ -11,6 +14,8 @@ import {
 } from '@clerk/backend/errors';
 import type { Request } from 'express';
 
+import { UserRole } from '@/database/entities/enums';
+import { UserEntity } from '@/database/entities/user.entity';
 import type { ClerkAuthUser } from './clerk-auth.types';
 
 const CLERK_TOKEN_HEADER = 'x-clerk-token';
@@ -18,7 +23,9 @@ const CLERK_TOKEN_HEADER = 'x-clerk-token';
 type AuthenticatedRequest = Request & { user?: ClerkAuthUser };
 
 const stripBearerPrefix = (token: string) =>
-  token.startsWith('Bearer ') ? token.slice('Bearer '.length).trim() : token.trim();
+  token.startsWith('Bearer ')
+    ? token.slice('Bearer '.length).trim()
+    : token.trim();
 
 const extractClerkToken = (request: Request): string | null => {
   const authorization = request.headers.authorization;
@@ -40,6 +47,13 @@ const extractClerkToken = (request: Request): string | null => {
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
+  private readonly logger = new Logger(ClerkAuthGuard.name);
+
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+  ) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const clerkToken = extractClerkToken(request);
@@ -61,7 +75,7 @@ export class ClerkAuthGuard implements CanActivate {
         throw new UnauthorizedException('Invalid authentication token');
       }
 
-      request.user = { userId };
+      request.user = { userId, role: await this.loadRole(userId) };
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -77,6 +91,25 @@ export class ClerkAuthGuard implements CanActivate {
       }
 
       throw new UnauthorizedException('Invalid authentication token');
+    }
+  }
+
+  /** Unknown users (no row yet) are guests; this never elevates privileges. */
+  private async loadRole(userId: string): Promise<UserRole> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        select: { id: true, role: true },
+      });
+
+      return user?.role === UserRole.MANAGER
+        ? UserRole.MANAGER
+        : UserRole.GUEST;
+    } catch (error) {
+      this.logger.warn(
+        `Role lookup failed for user ${userId}; defaulting to guest: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return UserRole.GUEST;
     }
   }
 }

@@ -23,7 +23,9 @@
     "db:migrate": "pnpm typeorm migration:run -d src/database/data-source.ts",
     "db:migrate:revert": "pnpm typeorm migration:revert -d src/database/data-source.ts",
     "db:migrate:generate": "pnpm typeorm migration:generate -d src/database/data-source.ts",
-    "db:seed": "node -r reflect-metadata -r tsconfig-paths/register -r ts-node/register src/database/seed.ts"
+    "db:seed": "node -r reflect-metadata -r tsconfig-paths/register -r ts-node/register src/database/seed.ts",
+    "db:promote-manager": "node -r reflect-metadata -r tsconfig-paths/register -r ts-node/register src/database/promote-manager.ts",
+    "db:backfill-user-profiles": "node -r reflect-metadata -r tsconfig-paths/register -r ts-node/register src/database/backfill-user-profiles.ts"
   },
   "dependencies": {
     "@clerk/backend": "^3.8.1",
