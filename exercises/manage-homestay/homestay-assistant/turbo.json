@@ -1,7 +1,17 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["API_URL", "MASTRA_DB_PATH", "NODE_ENV"],
+  "globalEnv": [
+    "API_URL",
+    "MASTRA_DB_PATH",
+    "NODE_ENV",
+    "INTELLIGENCE_API_URL",
+    "INTELLIGENCE_API_KEY",
+    "INTELLIGENCE_GATEWAY_WS_URL",
+    "ALLOWED_PUBLIC_HOSTS",
+    "LISTEN_HOST",
+    "PORT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
