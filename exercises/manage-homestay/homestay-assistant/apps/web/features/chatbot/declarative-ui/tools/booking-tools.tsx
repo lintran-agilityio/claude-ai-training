@@ -19,7 +19,6 @@ import {
   type ConfirmBookingArgs,
   type EditModifyBookingArgs,
 } from "@repo/schemas";
-import { MODEL_NAME } from "@repo/types";
 import {
   CancelBookingByRoomModal,
   ModifyBookingByRoomModal,
@@ -39,7 +38,6 @@ import {
   GetBookingsResult,
   FindBookingByIdResult,
 } from "@/features/booking/types";
-import { HitlConfirmStayModal } from "@/features/booking/components/HitlConfirmStayModal";
 
 /**
  * Render-only params for the `find_booking_by_id` notice — the agent owns the

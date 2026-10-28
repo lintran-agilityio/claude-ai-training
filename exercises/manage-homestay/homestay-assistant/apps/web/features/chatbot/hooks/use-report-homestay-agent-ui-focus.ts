@@ -35,6 +35,8 @@ export const useReportHomestayAgentUiFocus = (
     return () => {
       popUiFocus(key);
     };
+    // task and focus are intentionally not all listed: task is an object recreated on each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     active,
     focus?.id,
