@@ -144,10 +144,7 @@ describe('BookingRepository.hasOverlappingBooking', () => {
       return toDateKey(date);
     };
 
-    const addStay = (
-      checkInOffset: number,
-      status = BookingStatus.CONFIRMED,
-    ) =>
+    const addStay = (checkInOffset: number, status = BookingStatus.CONFIRMED) =>
       bookings.save({
         id: crypto.randomUUID(),
         userId: 'guest-a',

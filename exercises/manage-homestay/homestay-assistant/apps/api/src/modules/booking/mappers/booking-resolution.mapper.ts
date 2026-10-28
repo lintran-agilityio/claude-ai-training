@@ -11,7 +11,7 @@ export const toBookingResolution = (
   }
 
   if (bookings.length === 1) {
-    return { status: 'resolved', booking: bookings[0]! };
+    return { status: 'resolved', booking: bookings[0] };
   }
 
   return { status: 'ambiguous', bookings };
