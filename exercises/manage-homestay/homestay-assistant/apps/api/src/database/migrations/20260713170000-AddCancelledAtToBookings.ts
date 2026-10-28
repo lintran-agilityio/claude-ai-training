@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddCancelledAtToBookings20260713170000
-  implements MigrationInterface
-{
+export class AddCancelledAtToBookings20260713170000 implements MigrationInterface {
   name = 'AddCancelledAtToBookings20260713170000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

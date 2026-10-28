@@ -18,7 +18,9 @@ const CLERK_TOKEN_HEADER = 'x-clerk-token';
 type AuthenticatedRequest = Request & { user?: ClerkAuthUser };
 
 const stripBearerPrefix = (token: string) =>
-  token.startsWith('Bearer ') ? token.slice('Bearer '.length).trim() : token.trim();
+  token.startsWith('Bearer ')
+    ? token.slice('Bearer '.length).trim()
+    : token.trim();
 
 const extractClerkToken = (request: Request): string | null => {
   const authorization = request.headers.authorization;
