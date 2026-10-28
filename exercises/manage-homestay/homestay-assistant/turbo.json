@@ -10,6 +10,7 @@
     "INTELLIGENCE_GATEWAY_WS_URL",
     "ALLOWED_PUBLIC_HOSTS",
     "LISTEN_HOST",
+    "HOSTNAME",
     "PORT"
   ],
   "tasks": {
