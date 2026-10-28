@@ -14,9 +14,9 @@ describe('AppController', () => {
   let appController: AppController;
 
   const roomsServiceMock = {
-    getRooms: jest.fn().mockResolvedValue([
-      { id: 'meridian', name: 'The Meridian' },
-    ]),
+    getRooms: jest
+      .fn()
+      .mockResolvedValue([{ id: 'meridian', name: 'The Meridian' }]),
   };
 
   beforeEach(async () => {

@@ -51,8 +51,8 @@ describe('RoomsService CRUD', () => {
       findAll: jest.fn().mockResolvedValue([room]),
       findById: jest.fn().mockResolvedValue(room),
       findByName: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockImplementation(async (d) => d),
-      save: jest.fn().mockImplementation(async (r) => r),
+      create: jest.fn().mockImplementation((d) => Promise.resolve(d)),
+      save: jest.fn().mockImplementation((r) => Promise.resolve(r)),
       remove: jest.fn().mockResolvedValue(undefined),
       hasActiveBookings: jest.fn().mockResolvedValue(false),
     };
