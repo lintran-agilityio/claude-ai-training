@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { extractRoomNameQuery } from '@repo/utils';
-import { toDateKey, startOfDay, ACTIVE_BOOKING_STATUSES } from '@/utils';
+import {
+  toDateKey,
+  startOfDay,
+  ACTIVE_BOOKING_STATUSES,
+} from '@/utils';
 import { ListBookingsQueryDto } from '@/modules/booking/dto/list-bookings-query.dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 
@@ -74,6 +78,21 @@ export class BookingRepository {
         .andWhere('booking.checkInDate < :dateTo', { dateTo: filters.dateTo })
         .andWhere('booking.checkOutDate > :dateFrom', {
           dateFrom: filters.dateFrom,
+        });
+    }
+
+    // Check-in falls in [checkInFrom, checkInTo) and the guest has not checked
+    // in yet - drives the "upcoming check-ins" summary. Both must be present.
+    if (filters.checkInFrom && filters.checkInTo) {
+      query
+        .andWhere('booking.checkInDate >= :checkInFrom', {
+          checkInFrom: filters.checkInFrom,
+        })
+        .andWhere('booking.checkInDate < :checkInTo', {
+          checkInTo: filters.checkInTo,
+        })
+        .andWhere('booking.status IN (:...upcomingStatuses)', {
+          upcomingStatuses: ACTIVE_BOOKING_STATUSES,
         });
     }
 

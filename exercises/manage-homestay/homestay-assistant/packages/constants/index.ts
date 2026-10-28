@@ -31,3 +31,4 @@ export * from "./homestay-agent-context.js";
 export * from "./stop-timing.js";
 export * from "./regex.js";
 export * from "./find-room-sort.js";
+export * from "./upcoming-check-ins.js";

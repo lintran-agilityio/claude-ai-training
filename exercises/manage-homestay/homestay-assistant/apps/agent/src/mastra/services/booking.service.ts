@@ -53,6 +53,10 @@ export type GetBookingsParams = {
   status?: BookingStatus;
   /** YYYY-MM-DD — stays where checkIn <= onDate < checkOut */
   onDate?: string;
+  /** YYYY-MM-DD (inclusive) — with checkInTo, only not-yet-checked-in bookings whose check-in falls in the range */
+  checkInFrom?: string;
+  /** YYYY-MM-DD (exclusive) — paired with checkInFrom */
+  checkInTo?: string;
 };
 
 export const createBooking = async (
