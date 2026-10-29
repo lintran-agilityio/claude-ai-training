@@ -1,4 +1,5 @@
 import { BookingStatus } from '../../../types/enum';
+import { UserRole } from '@/database/entities/enums';
 import { UpcomingPeriod } from '@/modules/booking/dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
@@ -125,5 +126,71 @@ describe('BookingService.findUpcoming', () => {
     const result = await service.findUpcoming({}, userId);
 
     expect(result.checkIns[0].guestName).toBe('n@example.com');
+  });
+});
+
+describe('BookingService.findUpcoming scoping and timezone', () => {
+  const build = () => {
+    const bookingRepository = {
+      findUpcoming: jest
+        .fn()
+        .mockResolvedValue({ checkIns: [], checkOuts: [] }),
+    };
+    const service = new BookingService(
+      bookingRepository as unknown as BookingRepository,
+      {} as unknown as RoomsRepository,
+      {} as never,
+    );
+    return { service, bookingRepository };
+  };
+
+  afterEach(() => {
+    jest.useRealTimers();
+    delete process.env.PROPERTY_TIMEZONE;
+  });
+
+  it('scopes guests to their own bookings and managers to all', async () => {
+    const { service, bookingRepository } = build();
+
+    await service.findUpcoming({}, 'guest-1', UserRole.GUEST);
+    await service.findUpcoming({}, 'host-1', UserRole.MANAGER);
+
+    expect(bookingRepository.findUpcoming).toHaveBeenNthCalledWith(
+      1,
+      'guest-1',
+      expect.any(String),
+      expect.any(String),
+    );
+    expect(bookingRepository.findUpcoming).toHaveBeenNthCalledWith(
+      2,
+      null,
+      expect.any(String),
+      expect.any(String),
+    );
+  });
+
+  it('uses the property timezone for "today" (default Asia/Ho_Chi_Minh)', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-29T18:00:00.000Z'));
+    const { service } = build();
+
+    const result = await service.findUpcoming({}, 'host-1');
+
+    // 18:00Z is already 01:00 on the 30th in UTC+7.
+    expect(result).toMatchObject({ from: '2026-10-30', to: '2026-10-31' });
+  });
+
+  it('honours PROPERTY_TIMEZONE and falls back when it is invalid', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-29T18:00:00.000Z'));
+    const { service } = build();
+
+    process.env.PROPERTY_TIMEZONE = 'UTC';
+    expect(await service.findUpcoming({}, 'h')).toMatchObject({
+      from: '2026-10-29',
+    });
+
+    process.env.PROPERTY_TIMEZONE = 'Not/AZone';
+    expect(await service.findUpcoming({}, 'h')).toMatchObject({
+      from: '2026-10-30',
+    });
   });
 });

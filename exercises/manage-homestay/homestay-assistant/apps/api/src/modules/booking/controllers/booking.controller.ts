@@ -99,7 +99,7 @@ export class BookingController {
     @CurrentUser() user: ClerkAuthUser,
     @Query() query: UpcomingBookingsQueryDto,
   ): Promise<UpcomingBookingsResponseDto> {
-    return this.bookingService.findUpcoming(query, user.userId);
+    return this.bookingService.findUpcoming(query, user.userId, user.role);
   }
 
   @Get()

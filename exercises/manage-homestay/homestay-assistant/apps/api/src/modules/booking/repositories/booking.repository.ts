@@ -108,25 +108,31 @@ export class BookingRepository {
    * [from, to). Dates are date-only columns, so keys compare as strings.
    */
   async findUpcoming(
-    userId: string,
+    userId: string | null,
     from: string,
     to: string,
   ): Promise<{ checkIns: BookingEntity[]; checkOuts: BookingEntity[] }> {
-    const build = (dateColumn: 'checkInDate' | 'checkOutDate') =>
-      this.bookingRepository
+    const build = (dateColumn: 'checkInDate' | 'checkOutDate') => {
+      const query = this.bookingRepository
         .createQueryBuilder('booking')
         .leftJoinAndSelect('booking.room', 'room')
         .leftJoinAndSelect('booking.user', 'user')
-        .where('booking.userId = :userId', { userId })
-        .andWhere('booking.cancelledAt IS NULL')
+        .where('booking.cancelledAt IS NULL')
         .andWhere('booking.status != :cancelled', {
           cancelled: BookingStatus.CANCELLED,
         })
         .andWhere(`booking.${dateColumn} >= :from`, { from })
         .andWhere(`booking.${dateColumn} < :to`, { to })
         .orderBy(`booking.${dateColumn}`, 'ASC')
-        .addOrderBy('booking.id', 'ASC')
-        .getMany();
+        .addOrderBy('booking.id', 'ASC');
+
+      // null = every guest's bookings (manager view).
+      if (userId) {
+        query.andWhere('booking.userId = :userId', { userId });
+      }
+
+      return query.getMany();
+    };
 
     const [checkIns, checkOuts] = await Promise.all([
       build('checkInDate'),

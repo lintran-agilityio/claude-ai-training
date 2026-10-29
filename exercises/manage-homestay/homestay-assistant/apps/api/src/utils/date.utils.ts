@@ -85,3 +85,31 @@ export const parseDateRange = (
     nights: countNights(checkIn, checkOut),
   };
 };
+
+export const DEFAULT_PROPERTY_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+/**
+ * Calendar date of `now` in an IANA timezone, as UTC midnight so it composes
+ * with `toDateKey` / `addDays`. An unknown timezone falls back to the default.
+ */
+export const todayInTimeZone = (
+  timeZone: string = DEFAULT_PROPERTY_TIMEZONE,
+  now: Date = new Date(),
+): Date => {
+  const format = (zone: string) =>
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+
+  let key: string;
+  try {
+    key = format(timeZone);
+  } catch {
+    key = format(DEFAULT_PROPERTY_TIMEZONE);
+  }
+
+  return parseRequiredDate(key);
+};
