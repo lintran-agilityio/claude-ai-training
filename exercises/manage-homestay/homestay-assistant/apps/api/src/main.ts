@@ -8,7 +8,7 @@ async function bootstrap() {
   setupSwagger(app);
   const port = Number(process.env.PORT ?? 10000);
 
-  await app.listen(port, "0.0.0.0");
+  await app.listen(port, '0.0.0.0');
   console.log(`API listening on ${port}`);
 }
 bootstrap();

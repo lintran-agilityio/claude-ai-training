@@ -3,6 +3,7 @@
 import {
   CalendarCheck,
   CalendarRange,
+  Eye,
   Pencil,
   Users,
   CalendarX2,
@@ -15,6 +16,7 @@ import type { BookingResponse } from "@/features/booking/types/booking";
 import { FALLBACK_ROOM_IMAGE, resolveRoomImage } from "@/features/room/utils";
 import { cn, formatPrice, formatShortDateForDisplay } from "@repo/utils";
 import { Button } from "@/components/ui/button";
+import { MY_BOOKINGS_COPY } from "@/features/booking/constants";
 import {
   isBookingCancellable,
   isBookingModifiable,
@@ -44,6 +46,9 @@ export const BookingCard = ({
   const [url, setUrl] = useState<string | StaticImageData>(
     resolveRoomImage(imageUrl),
   );
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const detailsId = `booking-details-${booking.id}`;
 
   const isCancellable = isBookingCancellable(status, checkOutDate);
   const canModify =
@@ -126,6 +131,7 @@ export const BookingCard = ({
           >
             {room?.name ?? "Room"}
           </h3>
+          <BookingStatusBadge status={status} className="shrink-0" />
         </div>
 
         {booking.guestName && (
@@ -161,10 +167,45 @@ export const BookingCard = ({
           </span>
         </div>
       </div>
+      <div className={cn("mt-auto", compact ? "mx-3 mb-3" : "mx-4 mb-4")}>
+        <Button
+          type="button"
+          size={compact ? "sm" : "lg"}
+          variant="ghost"
+          aria-expanded={isExpanded}
+          aria-controls={detailsId}
+          className={cn(
+            "w-full gap-2 font-medium cursor-pointer",
+            compact ? "h-8 text-xs" : "h-11 text-base",
+          )}
+          onClick={() => setIsExpanded((prev) => !prev)}
+        >
+          <Eye className="size-4" />
+          {isExpanded
+            ? MY_BOOKINGS_COPY.hideDetailsLabel
+            : MY_BOOKINGS_COPY.viewDetailsLabel}
+        </Button>
+        {isExpanded ? (
+          <dl
+            id={detailsId}
+            className={cn(
+              "mt-2 space-y-1.5 rounded-lg border border-border bg-muted/40 p-3 text-muted-foreground",
+              compact ? "text-xs" : "text-sm",
+            )}
+          >
+            <div className="flex justify-between gap-3">
+              <dt>{MY_BOOKINGS_COPY.bookingIdLabel}</dt>
+              <dd className="break-all text-right text-foreground">
+                {booking.id}
+              </dd>
+            </div>
+          </dl>
+        ) : null}
+      </div>
       {isCancellable ? (
         <div
           className={cn(
-            "mt-auto flex gap-2",
+            "flex gap-2",
             compact ? "m-3 mt-0" : "m-4 mt-0",
           )}
         >

@@ -7,3 +7,8 @@ export enum Amenity {
   WHITEBOARD = 'whiteboard',
   PHONE = 'phone',
 }
+
+export enum UserRole {
+  GUEST = 'guest',
+  MANAGER = 'manager',
+}

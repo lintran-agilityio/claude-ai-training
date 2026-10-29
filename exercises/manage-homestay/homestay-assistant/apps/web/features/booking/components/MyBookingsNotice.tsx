@@ -6,6 +6,7 @@ import { parseToolResult } from "@repo/utils";
 import { AGENT_KEYS, TOOL_PURPOSE } from "@repo/constants";
 import { RoomListSkeleton } from "@/components/common/RoomListSkeleton";
 import { EmbeddedWidget } from "@/features/chatbot/components";
+import { MY_BOOKINGS_COPY } from "@/features/booking/constants";
 import { BookingList } from "@/features/booking/components/BookingList";
 import type { MessageLike } from "@/features/chatbot/types";
 import type {
@@ -13,8 +14,6 @@ import type {
   GetBookingsToolProps,
 } from "@/features/booking/types";
 import { shouldSuppressForResolve } from "@/features/room/utils";
-
-const MY_BOOKINGS_TITLE = "Your bookings";
 
 /**
  * Renders get_bookings tool output in chat: skeleton while loading, booking
@@ -46,8 +45,8 @@ export const MyBookingsNotice = ({
     // Only a guest-facing LIST call renders the bookings card, so only it gets
     // a loading skeleton. A resolve lookup, or a `purpose` that has not
     // streamed far enough to confirm LIST, renders nothing — no skeleton flash
-    // before the cancel / modify HITL. `purpose` is the first field in
-    // getBookingsInputSchema, so an explicit LIST call still shows it at once.
+    // before the cancel / modify HITL. `purpose` is declared before
+    // `upcomingCheckIns` in getBookingsInputSchema; an explicit LIST call shows it as soon as it streams.
     if (
       suppressForResolve ||
       parameters?.purpose !== TOOL_PURPOSE.GET_BOOKINGS.LIST
@@ -84,12 +83,17 @@ export const MyBookingsNotice = ({
     return null;
   }
 
+  const isUpcomingCheckIns = Boolean(
+    parsed.upcomingCheckIns ?? parameters?.upcomingCheckIns,
+  );
   const bookings = parsed.bookings ?? [];
 
   if (!bookings.length) {
     return (
       <EmbeddedWidget className="px-3.5 py-3 text-muted-foreground">
-        No active bookings found.
+        {isUpcomingCheckIns
+          ? MY_BOOKINGS_COPY.upcomingCheckInsEmpty
+          : MY_BOOKINGS_COPY.empty}
       </EmbeddedWidget>
     );
   }
@@ -98,7 +102,11 @@ export const MyBookingsNotice = ({
     <EmbeddedWidget unframed className="max-w-[min(100%,420px)]">
       <BookingList
         bookings={bookings}
-        title={MY_BOOKINGS_TITLE}
+        title={
+          isUpcomingCheckIns
+            ? MY_BOOKINGS_COPY.upcomingCheckInsTitle
+            : MY_BOOKINGS_COPY.title
+        }
         compact
         className="max-w-full rounded-xl border border-border bg-card p-3.5"
         toolCallId={toolCallId}

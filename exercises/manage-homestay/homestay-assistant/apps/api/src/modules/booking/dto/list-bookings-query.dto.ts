@@ -75,6 +75,28 @@ export class ListBookingsQueryDto {
 
   @ApiProperty({
     description:
+      'Start of an upcoming check-in range filter (inclusive), paired with checkInTo. Return only PENDING/CONFIRMED bookings whose check-in date is in [checkInFrom, checkInTo). YYYY-MM-DD.',
+    required: false,
+    example: '2026-10-27',
+  })
+  @IsOptional()
+  @IsString()
+  @IsDateString()
+  checkInFrom?: string;
+
+  @ApiProperty({
+    description:
+      'End of an upcoming check-in range filter (exclusive), paired with checkInFrom. YYYY-MM-DD.',
+    required: false,
+    example: '2026-10-30',
+  })
+  @IsOptional()
+  @IsString()
+  @IsDateString()
+  checkInTo?: string;
+
+  @ApiProperty({
+    description:
       'Return only bookings whose check-in date is exactly this day. YYYY-MM-DD. Does not restrict status.',
     required: false,
     example: '2026-11-01',

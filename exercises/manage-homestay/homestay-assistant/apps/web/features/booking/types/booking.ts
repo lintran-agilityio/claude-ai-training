@@ -198,10 +198,14 @@ export type GetBookingsResult = {
    * follows (confirm dialog or picker) renders.
    */
   purpose?: GetBookingsPurpose;
+  /** Echoed from get_bookings args when the upcoming check-ins window was fetched. */
+  upcomingCheckIns?: boolean;
 };
 
 export type GetBookingsParameters = {
   purpose?: GetBookingsResult["purpose"];
+  /** Set when the agent fetched the upcoming check-ins window. */
+  upcomingCheckIns?: boolean;
 };
 
 export type GetBookingsToolProps = ToolRendererProps<GetBookingsResult> & {

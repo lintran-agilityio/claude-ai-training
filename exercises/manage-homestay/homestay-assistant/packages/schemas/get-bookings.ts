@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { BookingStatus } from "@repo/types";
-import { GET_BOOKINGS_PURPOSE_VALUES } from "@repo/constants";
+import {
+  GET_BOOKINGS_PURPOSE_VALUES,
+  UPCOMING_CHECK_IN_DAYS,
+} from "@repo/constants";
 
 export const getBookingsInputSchema = z.object({
   roomId: z.string().optional().describe("Filter by room ID"),
@@ -25,6 +28,13 @@ export const getBookingsInputSchema = z.object({
     .optional()
     .describe(
       '"list" (or omit) for a guest-facing show/list my bookings request. "resolve" when this call only resolves the target booking for a cancel/modify/change-room workflow that has no bookingId — the booking-list card is suppressed since the HITL that follows (confirm dialog or picker) is the response.',
+    ),
+  // Declared after `purpose` so the web notice still sees `purpose` stream first.
+  upcomingCheckIns: z
+    .boolean()
+    .optional()
+    .describe(
+      `true returns the guest's bookings checking in within the next ${UPCOMING_CHECK_IN_DAYS} days (today included) that are not yet checked in (excludes checked-in / checked-out). Use for upcoming check-ins / who is checking in soon / check-ins in the next few days. Never combine with onDate or status - the date window is computed for you.`,
     ),
 });
 

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from '@/database/entities/user.entity';
+import { UsersModule } from '@/modules/users/users.module';
 import { RoomsModule } from '@/modules/rooms/rooms.module';
 import { BookingController } from '@/modules/booking/controllers/booking.controller';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
@@ -8,7 +8,11 @@ import { BookingRepository } from '@/modules/booking/repositories/booking.reposi
 import { BookingService } from '@/modules/booking/services/booking.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BookingEntity, UserEntity]), RoomsModule],
+  imports: [
+    TypeOrmModule.forFeature([BookingEntity]),
+    RoomsModule,
+    UsersModule,
+  ],
   controllers: [BookingController],
   providers: [BookingService, BookingRepository],
   exports: [BookingService],
