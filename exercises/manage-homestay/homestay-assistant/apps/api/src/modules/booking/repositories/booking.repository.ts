@@ -11,6 +11,7 @@ import {
 } from '@/utils';
 import { ListBookingsQueryDto } from '@/modules/booking/dto/list-bookings-query.dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
+import { BookingStatus } from '../../../types/enum';
 
 @Injectable()
 export class BookingRepository {
@@ -100,6 +101,45 @@ export class BookingRepository {
     }
 
     return query.getMany();
+  }
+
+  /**
+   * Non-cancelled bookings whose check-in (or check-out) date falls in
+   * [from, to). Dates are date-only columns, so keys compare as strings.
+   */
+  async findUpcoming(
+    userId: string | null,
+    from: string,
+    to: string,
+  ): Promise<{ checkIns: BookingEntity[]; checkOuts: BookingEntity[] }> {
+    const build = (dateColumn: 'checkInDate' | 'checkOutDate') => {
+      const query = this.bookingRepository
+        .createQueryBuilder('booking')
+        .leftJoinAndSelect('booking.room', 'room')
+        .leftJoinAndSelect('booking.user', 'user')
+        .where('booking.cancelledAt IS NULL')
+        .andWhere('booking.status != :cancelled', {
+          cancelled: BookingStatus.CANCELLED,
+        })
+        .andWhere(`booking.${dateColumn} >= :from`, { from })
+        .andWhere(`booking.${dateColumn} < :to`, { to })
+        .orderBy(`booking.${dateColumn}`, 'ASC')
+        .addOrderBy('booking.id', 'ASC');
+
+      // null = every guest's bookings (manager view).
+      if (userId) {
+        query.andWhere('booking.userId = :userId', { userId });
+      }
+
+      return query.getMany();
+    };
+
+    const [checkIns, checkOuts] = await Promise.all([
+      build('checkInDate'),
+      build('checkOutDate'),
+    ]);
+
+    return { checkIns, checkOuts };
   }
 
   async findById(id: string): Promise<BookingEntity | null> {
