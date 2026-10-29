@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { BookingStatus } from '../../../types/enum';
+
 import { UpcomingPeriod } from '@/modules/booking/dto/upcoming-bookings-query.dto';
 
 export class UpcomingBookingItemDto {
@@ -21,6 +23,9 @@ export class UpcomingBookingItemDto {
     example: '2026-10-29',
   })
   date: string;
+
+  @ApiProperty({ enum: BookingStatus, example: BookingStatus.CONFIRMED })
+  status: BookingStatus;
 }
 
 export class UpcomingBookingsResponseDto {

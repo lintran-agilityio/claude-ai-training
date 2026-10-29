@@ -211,6 +211,8 @@ export interface UpcomingBookingItem {
   guests: number;
   guestName: string;
   date: string;
+  /** Backend status, uppercase (PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT). */
+  status: string;
 }
 
 export interface UpcomingBookingsResponse {

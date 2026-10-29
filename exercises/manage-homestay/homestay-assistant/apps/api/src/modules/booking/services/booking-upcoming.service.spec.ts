@@ -1,3 +1,4 @@
+import { BookingStatus } from '../../../types/enum';
 import { UpcomingPeriod } from '@/modules/booking/dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
@@ -24,6 +25,7 @@ describe('BookingService.findUpcoming', () => {
       room: { name: 'A101' },
       user: { name: 'Nguyen', email: 'n@example.com' },
       guests: 2,
+      status: BookingStatus.CONFIRMED,
       checkInDate: '2026-10-29',
       checkOutDate: '2026-10-31',
       ...overrides,
@@ -103,6 +105,7 @@ describe('BookingService.findUpcoming', () => {
         guests: 2,
         guestName: 'Nguyen',
         date: '2026-10-29',
+        status: BookingStatus.CONFIRMED,
       },
     ]);
     expect(result.checkOuts[0]).toMatchObject({

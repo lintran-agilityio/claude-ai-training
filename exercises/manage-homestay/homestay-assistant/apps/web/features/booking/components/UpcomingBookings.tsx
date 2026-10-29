@@ -37,7 +37,7 @@ const UpcomingList = ({ title, items, emptyMessage }: UpcomingListProps) => (
             {item.roomName} · {item.guests}{" "}
             {item.guests === 1 ? "guest" : "guests"} · {item.guestName}
             <span className="block text-xs text-muted-foreground">
-              {item.date}
+              {item.date} · {item.status.replace("_", " ").toLowerCase()}
             </span>
           </li>
         ))}
@@ -58,7 +58,7 @@ export const UpcomingBookings = ({
   const { isLoaded, isSignedIn } = useAuth();
   const [period, setPeriod] = useState<UpcomingPeriod>("today");
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["upcoming-bookings", userId, period],
+    queryKey: ["bookings", "upcoming", userId, period],
     queryFn: ({ signal }) =>
       getUpcomingBookings({ period, via: PREFIX_URL.WEB, signal }),
     enabled: Boolean(isLoaded && isSignedIn && userId),

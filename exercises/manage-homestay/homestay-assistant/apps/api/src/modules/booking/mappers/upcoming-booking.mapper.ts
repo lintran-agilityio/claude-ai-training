@@ -10,4 +10,5 @@ export const toUpcomingBookingItemDto = (
   guests: booking.guests,
   guestName: booking.user?.name ?? booking.user?.email ?? booking.userId,
   date,
+  status: booking.status,
 });
