@@ -30,14 +30,24 @@ export class BookingRepository {
     const query = this.bookingRepository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.room', 'room')
-      .where('booking.cancelledAt IS NULL')
-      .andWhere('booking.checkOutDate >= :today', { today })
-      .andWhere('booking.userId = :userId', { userId: filters.userId })
+      // Only the guest's name is needed; selecting the whole row would load
+      // the password hash and other columns for every booking.
+      .leftJoin('booking.user', 'user')
+      .addSelect(['user.id', 'user.name'])
+      .where('booking.userId = :userId', { userId: filters.userId })
       // Secondary tie-break on id — checkInDate alone is not unique, so
       // repeated identical requests could otherwise return rows in a
       // different order (Postgres does not guarantee stable order for ties).
       .orderBy('booking.checkInDate', 'ASC')
       .addOrderBy('booking.id', 'ASC');
+
+    // Default is active bookings only; includeHistory lifts both limits so the
+    // host search can reach cancelled and already-checked-out bookings.
+    if (!filters.includeHistory) {
+      query
+        .andWhere('booking.cancelledAt IS NULL')
+        .andWhere('booking.checkOutDate >= :today', { today });
+    }
 
     if (filters.roomId) {
       query.andWhere('booking.roomId = :roomId', { roomId: filters.roomId });
@@ -64,6 +74,13 @@ export class BookingRepository {
 
     if (filters.status) {
       query.andWhere('booking.status = :status', { status: filters.status });
+    }
+
+    // Exact check-in day (host search); independent of status.
+    if (filters.checkInDate) {
+      query.andWhere('booking.checkInDate = :checkInDate', {
+        checkInDate: filters.checkInDate,
+      });
     }
 
     // Stay covers onDate: checkIn <= onDate AND checkOut > onDate (exclusive checkout).

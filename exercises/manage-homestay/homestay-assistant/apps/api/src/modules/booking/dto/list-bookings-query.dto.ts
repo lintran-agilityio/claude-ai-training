@@ -4,7 +4,9 @@ import {
   IsOptional,
   IsEnum,
   IsDateString,
+  IsBoolean,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { BookingStatus } from '../../../types/enum';
 
@@ -92,4 +94,30 @@ export class ListBookingsQueryDto {
   @IsString()
   @IsDateString()
   checkInTo?: string;
+
+  @ApiProperty({
+    description:
+      'Return only bookings whose check-in date is exactly this day. YYYY-MM-DD. Does not restrict status.',
+    required: false,
+    example: '2026-11-01',
+  })
+  @IsOptional()
+  @IsString()
+  @IsDateString()
+  checkInDate?: string;
+
+  @ApiProperty({
+    description:
+      'When true, also return cancelled bookings and stays already checked out (skips the default active-only restriction). Used by the host bookings search.',
+    required: false,
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
+  @IsBoolean()
+  includeHistory?: boolean;
 }

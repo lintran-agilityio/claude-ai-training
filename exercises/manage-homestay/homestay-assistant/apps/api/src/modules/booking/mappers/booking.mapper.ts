@@ -19,6 +19,10 @@ export const toBookingResponseDto = (
     updatedAt: booking.updatedAt,
   };
 
+  if (booking.user) {
+    response.guestName = booking.user.name;
+  }
+
   if (booking.room) {
     response.room = toRoomResponseDto(booking.room);
   }

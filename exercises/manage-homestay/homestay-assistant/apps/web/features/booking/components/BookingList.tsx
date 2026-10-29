@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { CardListSection } from "@/components/common/CardListSection";
 import { RoomListSkeleton } from "@/components/common/RoomListSkeleton";
 import { BookingCard } from "@/features/booking/components/BookingCard";
@@ -19,6 +20,8 @@ type BookingListProps = {
   compact?: boolean;
   /** Host get_bookings tool call — actions lock once superseded by a new user turn. */
   toolCallId?: string;
+  /** Shows a Retry button in the error state. */
+  onRetry?: () => void;
 };
 
 export const BookingList = ({
@@ -29,21 +32,25 @@ export const BookingList = ({
   error,
   compact = false,
   toolCallId,
+  onRetry,
 }: BookingListProps) => {
   const { isActionable } = useGenericUiInteraction(toolCallId);
   const cancelBooking = useCancelBooking();
   const modifyBooking = useModifyBooking();
 
   if (isLoading) {
-    return (
-       <RoomListSkeleton className={className} />
-    );
+    return <RoomListSkeleton className={className} />;
   }
 
   if (error && !isLoading) {
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center gap-3">
         <p className="text-destructive">{error.message}</p>
+        {onRetry && (
+          <Button type="button" variant="outline" onClick={onRetry}>
+            Retry
+          </Button>
+        )}
       </div>
     );
   }

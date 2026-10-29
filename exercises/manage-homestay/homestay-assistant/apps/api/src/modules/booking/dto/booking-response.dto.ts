@@ -74,6 +74,15 @@ export class BookingResponseDto {
   @IsDate()
   cancelledAt?: Date | null;
 
+  @ApiProperty({
+    description: 'Name of the guest who made the booking',
+    required: false,
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  guestName?: string | null;
+
   @ApiProperty({ type: RoomResponseDto, required: false })
   @IsOptional()
   @IsObject()

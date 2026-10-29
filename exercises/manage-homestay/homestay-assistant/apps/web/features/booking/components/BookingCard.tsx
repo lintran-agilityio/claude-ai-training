@@ -134,6 +134,17 @@ export const BookingCard = ({
           <BookingStatusBadge status={status} className="shrink-0" />
         </div>
 
+        {booking.guestName && (
+          <p
+            className={cn(
+              "text-muted-foreground",
+              compact ? "text-xs" : "text-sm",
+            )}
+          >
+            Guest: {booking.guestName}
+          </p>
+        )}
+
         <div
           className={cn(
             "flex items-start gap-2 text-muted-foreground",

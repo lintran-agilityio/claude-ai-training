@@ -230,4 +230,74 @@ describe('BookingRepository.hasOverlappingBooking', () => {
       expect(result).toHaveLength(1);
     });
   });
+
+  describe('findAll host search (checkInDate, includeHistory)', () => {
+    const offsetDate = (days: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return toDateKey(date);
+    };
+
+    const addStay = (
+      checkInOffset: number,
+      status = BookingStatus.CONFIRMED,
+      cancelledAt: Date | null = null,
+    ) =>
+      bookings.save({
+        id: crypto.randomUUID(),
+        userId: 'guest-a',
+        roomId,
+        checkInDate: offsetDate(checkInOffset),
+        checkOutDate: offsetDate(checkInOffset + 2),
+        guests: 1,
+        totalPrice: 100,
+        status,
+        cancelledAt,
+      });
+
+    beforeEach(async () => {
+      await bookings.clear();
+    });
+
+    it('matches only the exact check-in day', async () => {
+      await addStay(1);
+      await addStay(2);
+
+      const result = await repository.findAll({
+        userId: 'guest-a',
+        checkInDate: offsetDate(1),
+      });
+
+      expect(result.map((b) => b.checkInDate)).toEqual([offsetDate(1)]);
+    });
+
+    it('hides cancelled and past bookings by default', async () => {
+      await addStay(-10, BookingStatus.CHECKED_OUT);
+      await addStay(1, BookingStatus.CANCELLED, new Date());
+
+      await expect(
+        repository.findAll({ userId: 'guest-a' }),
+      ).resolves.toHaveLength(0);
+    });
+
+    it('returns cancelled and past bookings with includeHistory', async () => {
+      await addStay(-10, BookingStatus.CHECKED_OUT);
+      await addStay(1, BookingStatus.CANCELLED, new Date());
+
+      const cancelled = await repository.findAll({
+        userId: 'guest-a',
+        includeHistory: true,
+        status: BookingStatus.CANCELLED,
+      });
+      const checkedOut = await repository.findAll({
+        userId: 'guest-a',
+        includeHistory: true,
+        status: BookingStatus.CHECKED_OUT,
+        checkInDate: offsetDate(-10),
+      });
+
+      expect(cancelled).toHaveLength(1);
+      expect(checkedOut).toHaveLength(1);
+    });
+  });
 });
