@@ -330,3 +330,80 @@ describe('BookingService.update status transitions', () => {
     expect(result.status).toBe(status);
   });
 });
+
+/**
+ * Date changes re-check availability against other occupying bookings (incl.
+ * CHECKED_IN) but must exclude the booking being modified.
+ */
+describe('BookingService.update availability re-check', () => {
+  const userId = 'guest-a';
+  const room = {
+    id: 'room-1',
+    capacity: 4,
+    availableSlots: 1,
+    pricePerNight: 100,
+  };
+
+  const buildService = (overlaps: boolean) => {
+    const booking = {
+      id: 'booking-1',
+      userId,
+      roomId: room.id,
+      room,
+      checkInDate: '2030-01-10',
+      checkOutDate: '2030-01-12',
+      guests: 2,
+      totalPrice: 200,
+      status: BookingStatus.CONFIRMED,
+    } as unknown as BookingEntity;
+    const bookingRepository = {
+      findById: jest.fn().mockResolvedValue(booking),
+      hasOverlappingBooking: jest.fn().mockResolvedValue(overlaps),
+      save: jest
+        .fn()
+        .mockImplementation((b: BookingEntity) => Promise.resolve(b)),
+    };
+    const service = new BookingService(
+      bookingRepository as unknown as BookingRepository,
+      {
+        findById: jest.fn().mockResolvedValue(room),
+      } as unknown as RoomsRepository,
+      {} as never,
+    );
+    return { service, bookingRepository };
+  };
+
+  it('excludes the booking itself when re-checking new dates', async () => {
+    const { service, bookingRepository } = buildService(false);
+
+    await service.update('booking-1', { checkOutDate: '2030-01-13' }, userId);
+
+    expect(bookingRepository.hasOverlappingBooking).toHaveBeenCalledWith(
+      room.id,
+      new Date('2030-01-10'),
+      new Date('2030-01-13'),
+      'booking-1',
+    );
+  });
+
+  it('rejects new dates that overlap another occupying booking', async () => {
+    const { service, bookingRepository } = buildService(true);
+
+    await expect(
+      service.update('booking-1', { checkOutDate: '2030-01-13' }, userId),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(bookingRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('does not re-check availability when dates are unchanged', async () => {
+    const { service, bookingRepository } = buildService(true);
+
+    await service.update(
+      'booking-1',
+      { status: BookingStatus.CHECKED_IN },
+      userId,
+    );
+
+    expect(bookingRepository.hasOverlappingBooking).not.toHaveBeenCalled();
+  });
+});
