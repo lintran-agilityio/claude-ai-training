@@ -9,6 +9,7 @@ import {
 import { AGENT_KEYS, TOOL_KEYS } from "@repo/constants";
 import {
   findRoomInputSchema,
+  roomAvailabilityOverviewInputSchema,
   getRoomByIdInputSchema,
 } from "@repo/schemas";
 import { updateRoomListSchema } from "@/features/room/schemas";
@@ -20,11 +21,13 @@ import {
 } from "@/features/room/utils";
 import {
   FindRoomNotice,
+  RoomAvailabilityNotice,
   GetRoomByIdNotice,
 } from "@/features/room/components";
 import type {
   FindRoomResult,
   GetRoomByIdResult,
+  RoomAvailabilityToolProps,
 } from "@/features/room/types";
 
 export const RoomToolsProvider = () => {
@@ -58,6 +61,22 @@ export const RoomToolsProvider = () => {
           parameters={
             parameters as { purpose?: FindRoomResult["purpose"] } | undefined
           }
+          toolCallId={toolCallId}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      agentId: AGENT_KEYS.HOMESTAY_ASSISTANT,
+      name: TOOL_KEYS.GET.CHECK_ROOM_AVAILABILITY,
+      parameters: roomAvailabilityOverviewInputSchema,
+      render: ({ status, result, toolCallId }) => (
+        <RoomAvailabilityNotice
+          status={status}
+          result={result as RoomAvailabilityToolProps["result"]}
           toolCallId={toolCallId}
         />
       ),

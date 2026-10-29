@@ -10,6 +10,8 @@ export const BOOKING_MODIFY_PROMPT_PREFIX = "[booking-modify]";
 export const BOOKING_FORM_PROMPT_PREFIX = "[book-form]";
 /** UI: submit dates/guests — full create-booking tool chain. */
 export const BOOKING_STAY_PROMPT_PREFIX = "[book-stay]";
+/** UI: change the date on the room availability card — read-only overview. */
+export const AVAILABILITY_CHECK_PROMPT_PREFIX = "[availability-check]";
 /** Hidden page sync prompt — not shown as guest chat. */
 export const PAGE_ROOMS_PROMPT_PREFIX = "[page-rooms]";
 

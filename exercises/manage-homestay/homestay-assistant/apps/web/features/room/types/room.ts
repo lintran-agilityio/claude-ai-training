@@ -1,3 +1,4 @@
+import type { RoomAvailabilityOverview } from "@repo/schemas";
 import type { BookingStatus } from "@repo/types";
 import type { FindRoomPurpose, FindRoomSort } from "@repo/constants";
 import type { ToolRendererProps } from "@/features/chatbot/declarative-ui/types";
@@ -87,3 +88,5 @@ export type GetRoomByIdResult = {
 };
 
 export type GetRoomByIdToolProps = ToolRendererProps<GetRoomByIdResult>;
+export type RoomAvailabilityToolProps =
+  ToolRendererProps<RoomAvailabilityOverview>;

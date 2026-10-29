@@ -1,6 +1,6 @@
 import { ROUTES } from "@repo/constants";
 import { BookingStatus } from "@repo/types";
-import { extractRoomNameQuery } from "@repo/utils";
+import { addDaysYmd, extractRoomNameQuery } from "@repo/utils";
 
 import type { Booking } from "@agent/mastra/schemas/booking";
 import { getApiUrl } from "@agent/mastra/services/common";
@@ -99,6 +99,42 @@ export const installFakeApi = (): FakeApiHandle => {
       });
 
       return jsonResponse(rooms);
+    }
+
+    // Mirrors the API's role gate: the eval user is a guest, so `booked`
+    // (guest names) is omitted entirely. Must precede the `/rooms/:id` match.
+    if (pathname === ROUTES.ROOM_AVAILABILITY_OVERVIEW && method === "GET") {
+      const date = searchParams.get("date") ?? "";
+      const checkOutDate =
+        searchParams.get("checkOutDate") ?? addDaysYmd(date, 1);
+      const bookedRoomIds = new Set(
+        state.bookings
+          .filter(
+            (booking) =>
+              booking.status !== BookingStatus.CANCELLED &&
+              rangesOverlap(
+                date,
+                checkOutDate,
+                booking.checkInDate,
+                booking.checkOutDate,
+              ),
+          )
+          .map((booking) => booking.roomId),
+      );
+      const available = FIXTURE_ROOMS.filter(
+        (room) => !bookedRoomIds.has(room.id),
+      );
+
+      return jsonResponse({
+        date,
+        checkOutDate,
+        available,
+        summary: {
+          total: FIXTURE_ROOMS.length,
+          availableCount: available.length,
+          bookedCount: bookedRoomIds.size,
+        },
+      });
     }
 
     const roomIdMatch = pathname.match(

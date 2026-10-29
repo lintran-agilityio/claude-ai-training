@@ -1,4 +1,5 @@
 import {
+  AVAILABILITY_CHECK_PROMPT_PREFIX,
   BOOKING_CANCEL_CONFIRM_PROMPT_PREFIX,
   BOOKING_CANCEL_METADATA_SEPARATOR,
   BOOKING_CANCEL_PROMPT_PREFIX,
@@ -112,4 +113,19 @@ export const getBookingStayDisplayText = (content: string): string => {
     .trimStart();
 
   return withoutPrefix.replace(BOOKING_STAY_METADATA_PREFIX, "").trim();
+};
+
+export const isAvailabilityCheckPrompt = (content: string) =>
+  content.startsWith(AVAILABILITY_CHECK_PROMPT_PREFIX);
+
+export const buildAvailabilityCheckPrompt = (date: string) =>
+  `${AVAILABILITY_CHECK_PROMPT_PREFIX} date: ${date}`;
+
+export const getAvailabilityCheckDisplayText = (content: string): string => {
+  if (!isAvailabilityCheckPrompt(content)) {
+    return content;
+  }
+
+  const date = /\bdate:\s*(\d{4}-\d{2}-\d{2})/i.exec(content)?.[1];
+  return date ? `Which rooms are free on ${date}?` : "Which rooms are free?";
 };

@@ -13,6 +13,12 @@ export const TOOL_KEYS = {
      * result; no LLM designs the surface or touches room data.
      */
     COMPARE_ROOMS: "compare_rooms",
+    /**
+     * Mastra registration / createTool id / useRenderTool name. Read-only
+     * availability overview for a date: free rooms for everyone; booked rooms
+     * with guest names only when the API returns them (managers).
+     */
+    CHECK_ROOM_AVAILABILITY: "check_room_availability_overview",
   },
   BOOKING: {
     /** Guest-facing "show/list my bookings" — always the full list, no purpose. */
