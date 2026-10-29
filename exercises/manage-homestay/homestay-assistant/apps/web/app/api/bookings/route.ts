@@ -9,6 +9,11 @@ import { PREFIX_URL } from "@repo/types";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Real calendar day, so 2026-13-45 is ignored instead of failing the API call. */
+const isValidDay = (value: string): boolean =>
+  DATE_PATTERN.test(value) &&
+  new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
+
 const parseFilters = (searchParams: URLSearchParams): BookingFilters => {
   const roomName = searchParams.get("roomName") ?? undefined;
   const checkInDate = searchParams.get("checkInDate") ?? undefined;
@@ -17,7 +22,7 @@ const parseFilters = (searchParams: URLSearchParams): BookingFilters => {
   return {
     roomName,
     checkInDate:
-      checkInDate && DATE_PATTERN.test(checkInDate) ? checkInDate : undefined,
+      checkInDate && isValidDay(checkInDate) ? checkInDate : undefined,
     status: Object.values(BookingStatus).find((value) => value === status),
   };
 };

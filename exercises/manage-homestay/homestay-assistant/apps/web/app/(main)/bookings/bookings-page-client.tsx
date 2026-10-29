@@ -23,7 +23,11 @@ export const BookingsPageClient = ({ userId }: BookingsPageClientProps) => {
   const debouncedRoomName = useDebouncedValue(filters.roomName);
   const activeFilters: BookingFilters = {
     ...filters,
-    roomName: debouncedRoomName?.trim() || undefined,
+    // Only the typing path is debounced; clearing the field applies at once so
+    // a stale name is never sent with the other (immediate) filters.
+    roomName: filters.roomName?.trim()
+      ? debouncedRoomName?.trim() || undefined
+      : undefined,
   };
 
   const {

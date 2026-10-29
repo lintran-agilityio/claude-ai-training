@@ -30,7 +30,10 @@ export class BookingRepository {
     const query = this.bookingRepository
       .createQueryBuilder('booking')
       .leftJoinAndSelect('booking.room', 'room')
-      .leftJoinAndSelect('booking.user', 'user')
+      // Only the guest's name is needed; selecting the whole row would load
+      // the password hash and other columns for every booking.
+      .leftJoin('booking.user', 'user')
+      .addSelect(['user.id', 'user.name'])
       .where('booking.userId = :userId', { userId: filters.userId })
       // Secondary tie-break on id — checkInDate alone is not unique, so
       // repeated identical requests could otherwise return rows in a

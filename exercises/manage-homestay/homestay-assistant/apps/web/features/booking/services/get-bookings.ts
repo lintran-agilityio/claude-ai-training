@@ -1,7 +1,8 @@
 import { fetchResilient, getBaseUrl } from "@/utils";
-import type {
-  BookingFilters,
-  BookingResponse,
+import {
+  BookingStatus,
+  type BookingFilters,
+  type BookingResponse,
 } from "@/features/booking/types/booking";
 import { PREFIX_URL } from "@repo/types";
 import { ROUTES } from "@repo/constants";
@@ -14,10 +15,16 @@ type GetMyBookingsProps = {
   filters?: BookingFilters;
 };
 
+/** Only filters that can target past or cancelled stays lift the active-only default. */
+const needsHistory = ({ status, checkInDate }: BookingFilters): boolean =>
+  Boolean(checkInDate) ||
+  status === BookingStatus.CANCELLED ||
+  status === BookingStatus.CHECKED_OUT;
+
 /**
  * Query string for GET /bookings. The API enum is uppercase while the web enum
- * is lowercase, so status is uppercased here. Any active filter also sets
- * includeHistory so cancelled / checked-out bookings can be found.
+ * is lowercase, so status is uppercased here. A check-in date, Cancelled or
+ * Checked-out also sets includeHistory so those bookings can be found.
  */
 export const buildBookingsQuery = (filters: BookingFilters = {}): string => {
   const params = new URLSearchParams();
@@ -26,7 +33,7 @@ export const buildBookingsQuery = (filters: BookingFilters = {}): string => {
   if (roomName) params.set("roomName", roomName);
   if (filters.checkInDate) params.set("checkInDate", filters.checkInDate);
   if (filters.status) params.set("status", filters.status.toUpperCase());
-  if (params.size > 0) params.set("includeHistory", "true");
+  if (needsHistory(filters)) params.set("includeHistory", "true");
 
   const query = params.toString();
   return query ? `?${query}` : "";
