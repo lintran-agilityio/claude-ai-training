@@ -31,6 +31,8 @@ import {
   BookingNotFoundResolutionDto,
   BookingResolvedResolutionDto,
   FindBookingsQueryDto,
+  UpcomingBookingsQueryDto,
+  UpcomingBookingsResponseDto,
   type BookingResolution,
 } from '@/modules/booking/dto';
 import { BookingService } from '@/modules/booking/services/booking.service';
@@ -84,6 +86,20 @@ export class BookingController {
     @Query() query: FindBookingsQueryDto,
   ): Promise<BookingResolution> {
     return this.bookingService.findBookings(query, user.userId);
+  }
+
+  @Get('upcoming')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'List check-ins and check-outs for today, tomorrow or next 3 days',
+  })
+  @ApiOkResponse({ type: UpcomingBookingsResponseDto })
+  findUpcoming(
+    @CurrentUser() user: ClerkAuthUser,
+    @Query() query: UpcomingBookingsQueryDto,
+  ): Promise<UpcomingBookingsResponseDto> {
+    return this.bookingService.findUpcoming(query, user.userId);
   }
 
   @Get()

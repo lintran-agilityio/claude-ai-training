@@ -196,3 +196,21 @@ export type GetBookingsParameters = {
 export type GetBookingsToolProps = ToolRendererProps<GetBookingsResult> & {
   parameters?: GetBookingsParameters;
 };
+
+export type UpcomingPeriod = "today" | "tomorrow" | "next3days";
+
+export interface UpcomingBookingItem {
+  id: string;
+  roomName: string;
+  guests: number;
+  guestName: string;
+  date: string;
+}
+
+export interface UpcomingBookingsResponse {
+  period: UpcomingPeriod;
+  from: string;
+  to: string;
+  checkIns: UpcomingBookingItem[];
+  checkOuts: UpcomingBookingItem[];
+}

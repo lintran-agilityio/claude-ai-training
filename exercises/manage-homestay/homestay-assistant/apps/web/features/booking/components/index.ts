@@ -13,3 +13,4 @@ export * from "./ConfirmBookingModal";
 export * from "./EditModifyBookingModal";
 export * from "./MyBookingsNotice";
 export * from "./ConfirmModifyModal";
+export * from "./UpcomingBookings";

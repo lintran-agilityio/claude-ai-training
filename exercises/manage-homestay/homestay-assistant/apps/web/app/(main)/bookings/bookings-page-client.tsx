@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { PREFIX_URL } from "@repo/types";
 import { PageHeader } from "@/components/common";
-import { BookingList } from "@/features/booking/components";
+import { BookingList, UpcomingBookings } from "@/features/booking/components";
 import { getMyBookings } from "@/features/booking/services";
 
 const MY_BOOKINGS_TITLE = "Your reservations";
@@ -22,8 +22,7 @@ export const BookingsPageClient = ({ userId }: BookingsPageClientProps) => {
     error,
   } = useQuery({
     queryKey: ["bookings", userId],
-    queryFn: ({ signal }) =>
-      getMyBookings({ via: PREFIX_URL.WEB, signal }),
+    queryFn: ({ signal }) => getMyBookings({ via: PREFIX_URL.WEB, signal }),
     enabled: Boolean(isLoaded && isSignedIn && userId),
     retry: false,
   });
@@ -34,6 +33,7 @@ export const BookingsPageClient = ({ userId }: BookingsPageClientProps) => {
         title="MY BOOKINGS"
         description="Review, modify, or cancel your upcoming stays."
       />
+      <UpcomingBookings userId={userId} className="mt-8" />
       <BookingList
         bookings={bookings}
         title={MY_BOOKINGS_TITLE}

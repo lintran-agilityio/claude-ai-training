@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 
 import { BookingStatus } from '../../../types/enum';
 import { UserEntity } from '@/database/entities/user.entity';
-import { parseDateRange, toDateKey } from '@/utils';
+import { addDays, parseDateRange, startOfDay, toDateKey } from '@/utils';
 import { RoomsRepository } from '@/modules/rooms/repositories/rooms.repository';
 import { RoomEntity } from '@/modules/rooms/entities/room.entity';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
@@ -21,9 +21,13 @@ import {
   FindBookingsQueryDto,
   ListBookingsQueryDto,
   UpdateBookingDto,
+  UpcomingBookingsQueryDto,
+  UpcomingBookingsResponseDto,
+  UpcomingPeriod,
   type BookingResolution,
 } from '@/modules/booking/dto';
 import { toBookingResponseDto } from '@/modules/booking/mappers/booking.mapper';
+import { toUpcomingBookingItemDto } from '@/modules/booking/mappers/upcoming-booking.mapper';
 import { toBookingResolution } from '@/modules/booking/mappers/booking-resolution.mapper';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
 import { toRoomResponseDto } from '@/modules/rooms/mappers/room.mapper';
@@ -107,6 +111,35 @@ export class BookingService {
   ): Promise<BookingResolution> {
     const bookings = await this.findAll(query as ListBookingsQueryDto, userId);
     return toBookingResolution(bookings);
+  }
+
+  async findUpcoming(
+    query: UpcomingBookingsQueryDto,
+    userId: string,
+  ): Promise<UpcomingBookingsResponseDto> {
+    const period = query.period ?? UpcomingPeriod.TODAY;
+    const today = startOfDay(new Date());
+    const start =
+      period === UpcomingPeriod.TOMORROW ? addDays(today, 1) : today;
+    const days = period === UpcomingPeriod.NEXT_3_DAYS ? 3 : 1;
+    const from = toDateKey(start);
+    const to = toDateKey(addDays(start, days));
+
+    const { checkIns, checkOuts } = await this.bookingRepository.findUpcoming(
+      userId,
+      from,
+      to,
+    );
+
+    return {
+      period,
+      from,
+      to,
+      checkIns: checkIns.map((b) => toUpcomingBookingItemDto(b, b.checkInDate)),
+      checkOuts: checkOuts.map((b) =>
+        toUpcomingBookingItemDto(b, b.checkOutDate),
+      ),
+    };
   }
 
   async findById(id: string, userId: string): Promise<BookingResponseDto> {

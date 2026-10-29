@@ -6,3 +6,5 @@ export * from './availability-response.dto';
 export * from './booking-response.dto';
 export * from './find-bookings-query.dto';
 export * from './booking-resolution.dto';
+export * from './upcoming-bookings-query.dto';
+export * from './upcoming-bookings-response.dto';
