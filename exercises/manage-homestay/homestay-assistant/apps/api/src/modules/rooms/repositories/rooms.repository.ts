@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { FIND_ROOM_SORT, type FindRoomSort } from '@repo/constants';
 import {
   ACTIVE_BOOKING_STATUSES,
+  OCCUPYING_BOOKING_STATUSES,
   BOOKING_OVERLAP_JOIN_CONDITION,
 } from '@/utils';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
@@ -94,7 +95,7 @@ export class RoomsRepository {
       .createQueryBuilder('booking')
       .where('booking.roomId = :roomId', { roomId })
       .andWhere('booking.status IN (:...activeStatuses)', {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
       })
       .getCount();
     return count > 0;
@@ -126,7 +127,7 @@ export class RoomsRepository {
     const qb = this.roomRepository
       .createQueryBuilder('room')
       .leftJoin('room.bookings', 'booking', BOOKING_OVERLAP_JOIN_CONDITION, {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
         checkOutDate,
         checkInDate,
       })
@@ -157,7 +158,7 @@ export class RoomsRepository {
 
     if (filters.checkInDate && filters.checkOutDate) {
       qb.leftJoin('room.bookings', 'booking', BOOKING_OVERLAP_JOIN_CONDITION, {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
         checkOutDate: filters.checkOutDate,
         checkInDate: filters.checkInDate,
       })
@@ -196,7 +197,7 @@ export class RoomsRepository {
       .where('booking.roomId = :roomId', { roomId })
       .andWhere('booking.userId = :userId', { userId })
       .andWhere('booking.status IN (:...activeStatuses)', {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
       })
       .orderBy('booking.createdAt', 'DESC')
       .getOne();
@@ -211,7 +212,7 @@ export class RoomsRepository {
       .createQueryBuilder('booking')
       .where('booking.roomId = :roomId', { roomId })
       .andWhere('booking.status IN (:...activeStatuses)', {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
       })
       .andWhere('booking.checkInDate < :checkOutDate', { checkOutDate })
       .andWhere('booking.checkOutDate > :checkInDate', { checkInDate })

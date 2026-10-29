@@ -120,6 +120,27 @@ describe('BookingRepository.hasOverlappingBooking', () => {
     ).resolves.toBe(true);
   });
 
+  it.each([BookingStatus.PENDING, BookingStatus.CHECKED_IN])(
+    'is blocked by a %s booking (it occupies the room)',
+    async (status) => {
+      await bookings.clear();
+      await addBooking(10, 12, status);
+
+      await expect(
+        repository.hasOverlappingBooking(roomId, day(11), day(13)),
+      ).resolves.toBe(true);
+    },
+  );
+
+  it('is free once the guest has checked out', async () => {
+    await bookings.clear();
+    await addBooking(10, 12, BookingStatus.CHECKED_OUT);
+
+    await expect(
+      repository.hasOverlappingBooking(roomId, day(10), day(12)),
+    ).resolves.toBe(false);
+  });
+
   it('ignores a cancelled booking', async () => {
     await bookings.clear();
     await addBooking(10, 12, BookingStatus.CANCELLED);

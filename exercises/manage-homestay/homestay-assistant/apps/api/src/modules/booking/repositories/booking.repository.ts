@@ -3,7 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { extractRoomNameQuery } from '@repo/utils';
-import { toDateKey, startOfDay, ACTIVE_BOOKING_STATUSES } from '@/utils';
+import {
+  toDateKey,
+  startOfDay,
+  ACTIVE_BOOKING_STATUSES,
+  OCCUPYING_BOOKING_STATUSES,
+} from '@/utils';
 import { ListBookingsQueryDto } from '@/modules/booking/dto/list-bookings-query.dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 
@@ -118,7 +123,7 @@ export class BookingRepository {
       .createQueryBuilder('booking')
       .where('booking.roomId = :roomId', { roomId })
       .andWhere('booking.status IN (:...activeStatuses)', {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
       })
       .andWhere('booking.checkInDate < :checkOutDate', {
         checkOutDate: toDateKey(checkOutDate),
