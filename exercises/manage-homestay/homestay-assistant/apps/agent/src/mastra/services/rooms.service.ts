@@ -1,12 +1,22 @@
 import { ROUTES } from "@repo/constants";
-import { roomSchema, type Room } from "@repo/schemas";
+import {
+  roomAvailabilityOverviewSchema,
+  roomSchema,
+  type Room,
+  type RoomAvailabilityOverview,
+} from "@repo/schemas";
 import { formatTodayYmd, isAbortError } from "@repo/utils";
 import {
   roomsListResponseSchema,
   type FindRoomInput,
   type FindRoomOutput,
 } from "@/mastra/schemas/rooms";
-import { get, ApiError, type ApiRequestContext } from "@/mastra/services/common";
+import {
+  get,
+  assertClerkTokenForApi,
+  ApiError,
+  type ApiRequestContext,
+} from "@/mastra/services/common";
 
 export type RoomServiceContext = ApiRequestContext;
 
@@ -106,3 +116,31 @@ export const getRoom = async (
     requestContext: serviceContext?.requestContext,
     abortSignal: serviceContext?.abortSignal,
   });
+
+/**
+ * Read-only availability overview for a date range, fetched WITH the user's
+ * Clerk token — the API decides from the caller's role whether `booked` (guest
+ * names) is included, so the agent never filters or invents it.
+ *
+ * @param input - Date (YYYY-MM-DD) and optional exclusive check-out date
+ * @returns Overview; `booked` is absent unless the caller is a manager
+ */
+export const getRoomAvailabilityOverview = async (
+  input: { date: string; checkOutDate?: string },
+  serviceContext?: RoomServiceContext,
+): Promise<RoomAvailabilityOverview> => {
+  assertClerkTokenForApi(serviceContext?.requestContext);
+  return get(
+    ROUTES.ROOM_AVAILABILITY_OVERVIEW,
+    roomAvailabilityOverviewSchema,
+    {
+      searchParams: {
+        date: input.date,
+        checkOutDate: input.checkOutDate?.trim() || undefined,
+      },
+      errorMessage: "Failed to check room availability",
+      requestContext: serviceContext?.requestContext,
+      abortSignal: serviceContext?.abortSignal,
+    },
+  );
+};

@@ -18,3 +18,5 @@ export * from "./AmenitiesRoom";
 export * from "./ListRoomPreview";
 export * from "./FindRoomNotice";
 export * from "./GetRoomByIdNotice";
+export * from "./RoomAvailabilityCard";
+export * from "./RoomAvailabilityNotice";

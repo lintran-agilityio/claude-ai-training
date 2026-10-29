@@ -137,6 +137,29 @@ export class RoomsRepository {
   }
 
   /**
+   * Active bookings overlapping [checkInDate, checkOutDate), with room and
+   * guest loaded — same overlap semantics as the availability queries.
+   */
+  async findOverlappingBookings(
+    checkInDate: Date,
+    checkOutDate: Date,
+  ): Promise<BookingEntity[]> {
+    return this.bookingRepository
+      .createQueryBuilder('booking')
+      .innerJoinAndSelect('booking.room', 'room')
+      .innerJoinAndSelect('booking.user', 'user')
+      .where('booking.status IN (:...activeStatuses)', {
+        activeStatuses: ACTIVE_BOOKING_STATUSES,
+      })
+      .andWhere('booking.checkInDate < :checkOutDate', { checkOutDate })
+      .andWhere('booking.checkOutDate > :checkInDate', { checkInDate })
+      .orderBy('room.name', 'ASC')
+      .addOrderBy('booking.checkInDate', 'ASC')
+      .addOrderBy('booking.id', 'ASC')
+      .getMany();
+  }
+
+  /**
    * Finds rooms matching optional name, capacity, level, and availability filters.
    * Guest count is a minimum (`capacity >= guests`), never an exact match.
    *

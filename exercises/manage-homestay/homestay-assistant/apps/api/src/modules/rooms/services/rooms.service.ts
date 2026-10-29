@@ -6,8 +6,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { addDays, isEmptyDateValue, resolveDateOrToday } from '@/utils';
+import { UserRole } from '@/database/entities/enums';
 import {
+  addDays,
+  isEmptyDateValue,
+  parseDateRange,
+  parseRequiredDate,
+  resolveDateOrToday,
+  toDateKey,
+} from '@/utils';
+import {
+  AvailabilityOverviewQueryDto,
+  AvailabilityOverviewResponseDto,
   GetRoomByIdQueryDto,
   GetAvailableRoomsQueryDto,
   CreateRoomDto,
@@ -84,6 +94,58 @@ export class RoomsService {
     });
 
     return (rooms ?? []).map(toRoomResponseDto);
+  }
+
+  /**
+   * Read-only availability overview for a date range. Everyone gets the free
+   * rooms and counts; only managers get the `booked` list with guest names —
+   * for any other role the key is omitted entirely.
+   *
+   * @param query - Start date and optional exclusive check-out date (default date + 1)
+   * @param role - Role of the caller, resolved by ClerkAuthGuard
+   * @throws BadRequestException when a date is invalid or checkOutDate <= date
+   */
+  async getAvailabilityOverview(
+    query: AvailabilityOverviewQueryDto,
+    role: UserRole,
+  ): Promise<AvailabilityOverviewResponseDto> {
+    const start = parseRequiredDate(query.date, 'date');
+    const end = isEmptyDateValue(query.checkOutDate)
+      ? addDays(start, 1)
+      : parseRequiredDate(query.checkOutDate, 'checkOutDate');
+    const { checkInDate, checkOutDate } = parseDateRange(
+      toDateKey(start),
+      toDateKey(end),
+    );
+
+    const [available, bookings, allRooms] = await Promise.all([
+      this.roomsRepository.findAvailableBetween(checkInDate, checkOutDate),
+      this.roomsRepository.findOverlappingBookings(checkInDate, checkOutDate),
+      this.roomsRepository.findAll(),
+    ]);
+
+    const response: AvailabilityOverviewResponseDto = {
+      date: toDateKey(checkInDate),
+      checkOutDate: toDateKey(checkOutDate),
+      available: available.map(toRoomResponseDto),
+      summary: {
+        total: allRooms.length,
+        availableCount: available.length,
+        bookedCount: new Set(bookings.map((booking) => booking.roomId)).size,
+      },
+    };
+
+    if (role === UserRole.MANAGER) {
+      response.booked = bookings.map((booking) => ({
+        room: toRoomResponseDto(booking.room),
+        bookingId: booking.id,
+        guestName: booking.user.name?.trim() || booking.user.email,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+      }));
+    }
+
+    return response;
   }
 
   /**

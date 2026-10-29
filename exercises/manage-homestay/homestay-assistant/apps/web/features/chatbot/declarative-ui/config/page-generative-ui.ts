@@ -1,8 +1,10 @@
 import {
+  getAvailabilityCheckDisplayText,
   getBookingCancelDisplayText,
   getBookingFormDisplayText,
   getBookingModifyDisplayText,
   getBookingStayDisplayText,
+  isAvailabilityCheckPrompt,
   isBookingCancelPrompt,
   isBookingFormPrompt,
   isBookingModifyPrompt,
@@ -619,6 +621,10 @@ export const getMessageTextContent = (content?: unknown) => {
 };
 
 export const getUserVisibleMessageContent = (content: string) => {
+  if (isAvailabilityCheckPrompt(content)) {
+    return getAvailabilityCheckDisplayText(content);
+  }
+
   if (isBookingCancelPrompt(content)) {
     return getBookingCancelDisplayText(content);
   }

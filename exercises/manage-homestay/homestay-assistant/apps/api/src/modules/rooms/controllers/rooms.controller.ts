@@ -8,9 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
+import { ClerkAuthGuard, CurrentUser, type ClerkAuthUser } from '@/auth';
+import { AvailabilityOverviewQueryDto } from '@/modules/rooms/dto/availability-overview-query.dto';
+import { AvailabilityOverviewResponseDto } from '@/modules/rooms/dto/availability-overview-response.dto';
 import { GetAvailableRoomsQueryDto } from '@/modules/rooms/dto/get-available-rooms-query.dto';
 import { GetRoomByIdQueryDto } from '@/modules/rooms/dto/get-room-by-id-query.dto';
 import { CreateRoomDto } from '@/modules/rooms/dto/create-room.dto';
@@ -33,6 +42,22 @@ export class RoomsController {
     @Query() query: GetAvailableRoomsQueryDto,
   ): Promise<RoomResponseDto[]> {
     return this.roomsService.getRooms(query);
+  }
+
+  // Declared before `:id` so "availability-overview" is not captured as an id.
+  @Get('availability-overview')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Read-only availability overview for a date: free rooms for everyone; booked rooms with guest names for managers only',
+  })
+  @ApiOkResponse({ type: AvailabilityOverviewResponseDto })
+  getAvailabilityOverview(
+    @CurrentUser() user: ClerkAuthUser,
+    @Query() query: AvailabilityOverviewQueryDto,
+  ): Promise<AvailabilityOverviewResponseDto> {
+    return this.roomsService.getAvailabilityOverview(query, user.role);
   }
 
   @Get(':id')

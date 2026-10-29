@@ -6,10 +6,13 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
-import { Amenity } from '@/database/entities/enums';
+import { Amenity, UserRole } from '@/database/entities/enums';
 import { CreateRoomDto } from '@/modules/rooms/dto/create-room.dto';
 import { RoomEntity } from '@/modules/rooms/entities/room.entity';
 import { RoomsRepository } from '@/modules/rooms/repositories/rooms.repository';
+import { BookingEntity } from '@/modules/booking/entities/booking.entity';
+import { RoomsController } from '@/modules/rooms/controllers/rooms.controller';
+import { AvailabilityOverviewQueryDto } from '@/modules/rooms/dto/availability-overview-query.dto';
 import { RoomsService } from '@/modules/rooms/services/rooms.service';
 
 // `@repo/utils` and `@repo/constants` ship as ESM, which jest (CommonJS) cannot load.
@@ -172,5 +175,131 @@ describe('RoomsService CRUD', () => {
       );
       expect(repo.remove).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('RoomsService.getAvailabilityOverview', () => {
+  const lotus = { id: 'r1', ...validInput } as RoomEntity;
+  const moon = {
+    id: 'r2',
+    ...validInput,
+    name: 'Moonlight Loft',
+  } as RoomEntity;
+  const booking = {
+    id: 'b1',
+    roomId: 'r2',
+    room: moon,
+    user: { name: 'Jane Doe', email: 'jane@example.com' },
+    checkInDate: '2030-01-10',
+    checkOutDate: '2030-01-12',
+  } as unknown as BookingEntity;
+
+  let repo: Record<
+    'findAvailableBetween' | 'findOverlappingBookings' | 'findAll',
+    jest.Mock
+  >;
+  let service: RoomsService;
+
+  beforeEach(() => {
+    repo = {
+      findAvailableBetween: jest.fn().mockResolvedValue([lotus]),
+      findOverlappingBookings: jest.fn().mockResolvedValue([booking]),
+      findAll: jest.fn().mockResolvedValue([lotus, moon]),
+    };
+    service = new RoomsService(repo as unknown as RoomsRepository);
+  });
+
+  it('omits the booked key entirely for guests', async () => {
+    const result = await service.getAvailabilityOverview(
+      { date: '2030-01-10' },
+      UserRole.GUEST,
+    );
+
+    expect('booked' in result).toBe(false);
+    expect(JSON.stringify(result)).not.toContain('Jane');
+    expect(result.available.map((r) => r.name)).toEqual(['Lotus Garden']);
+    expect(result.summary).toEqual({
+      total: 2,
+      availableCount: 1,
+      bookedCount: 1,
+    });
+  });
+
+  it('returns booked rooms with guest name for managers', async () => {
+    const result = await service.getAvailabilityOverview(
+      { date: '2030-01-10' },
+      UserRole.MANAGER,
+    );
+
+    expect(result.booked).toEqual([
+      expect.objectContaining({
+        bookingId: 'b1',
+        guestName: 'Jane Doe',
+        checkInDate: '2030-01-10',
+        checkOutDate: '2030-01-12',
+      }),
+    ]);
+  });
+
+  it('falls back to email when the guest has no name', async () => {
+    repo.findOverlappingBookings.mockResolvedValue([
+      { ...booking, user: { name: null, email: 'jane@example.com' } },
+    ]);
+
+    const result = await service.getAvailabilityOverview(
+      { date: '2030-01-10' },
+      UserRole.MANAGER,
+    );
+
+    expect(result.booked?.[0].guestName).toBe('jane@example.com');
+  });
+
+  it('defaults checkOutDate to date + 1 and queries [date, checkOut) so the checkout day is free', async () => {
+    const result = await service.getAvailabilityOverview(
+      { date: '2030-01-12' },
+      UserRole.GUEST,
+    );
+
+    expect(result.checkOutDate).toBe('2030-01-13');
+    const [checkIn, checkOut] = repo.findOverlappingBookings.mock.calls[0] as [
+      Date,
+      Date,
+    ];
+    expect(checkIn.toISOString()).toBe('2030-01-12T00:00:00.000Z');
+    expect(checkOut.toISOString()).toBe('2030-01-13T00:00:00.000Z');
+  });
+
+  it.each([
+    [
+      'checkOut equals date',
+      { date: '2030-01-10', checkOutDate: '2030-01-10' },
+    ],
+    [
+      'checkOut before date',
+      { date: '2030-01-10', checkOutDate: '2030-01-09' },
+    ],
+    ['unparseable date', { date: 'not-a-date' }],
+  ])('rejects invalid dates: %s', async (_label, query) => {
+    await expect(
+      service.getAvailabilityOverview(query, UserRole.GUEST),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repo.findAvailableBetween).not.toHaveBeenCalled();
+  });
+});
+
+describe('RoomsController.getAvailabilityOverview', () => {
+  it('passes the guard-resolved role to the service', async () => {
+    const getAvailabilityOverview = jest.fn().mockResolvedValue({});
+    const controller = new RoomsController({
+      getAvailabilityOverview,
+    } as unknown as RoomsService);
+    const query: AvailabilityOverviewQueryDto = { date: '2030-01-10' };
+
+    await controller.getAvailabilityOverview(
+      { userId: 'u1', role: UserRole.GUEST },
+      query,
+    );
+
+    expect(getAvailabilityOverview).toHaveBeenCalledWith(query, UserRole.GUEST);
   });
 });
