@@ -4,11 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
 import { BookingStatus } from '../../../types/enum';
-import { UserEntity } from '@/database/entities/user.entity';
+import { UsersService } from '@/modules/users/services/users.service';
 import { addDays, parseDateRange, startOfDay, toDateKey } from '@/utils';
 import { RoomsRepository } from '@/modules/rooms/repositories/rooms.repository';
 import { RoomEntity } from '@/modules/rooms/entities/room.entity';
@@ -48,8 +46,7 @@ export class BookingService {
   constructor(
     private readonly bookingRepository: BookingRepository,
     private readonly roomsRepository: RoomsRepository,
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(
@@ -64,7 +61,7 @@ export class BookingService {
     ]);
     this.assertPositiveGuests(dto.guests);
 
-    await this.findOrCreateUser(userId);
+    await this.usersService.findOrCreate(userId);
 
     const room = await this.getRoomOrThrow(dto.roomId);
     this.assertGuestCapacity(room, dto.guests);
@@ -302,24 +299,6 @@ export class BookingService {
     }
 
     return booking;
-  }
-
-  private async findOrCreateUser(userId: string): Promise<UserEntity> {
-    const existing = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-
-    if (existing) {
-      return existing;
-    }
-
-    return this.userRepository.save({
-      id: userId,
-      email: `${userId}@users.local`,
-      name: null,
-      password: 'n/a',
-      updatedAt: new Date(),
-    });
   }
 
   private async getRoomOrThrow(roomId: string): Promise<RoomEntity> {

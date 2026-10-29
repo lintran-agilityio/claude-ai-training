@@ -22,7 +22,6 @@ type UseThreadMessagesProps = {
  */
 export const useThreadMessages = ({
   agent,
-  agentId: _agentId,
   threadId,
 }: UseThreadMessagesProps) => {
   const agentRef = useRef(agent);
@@ -33,8 +32,7 @@ export const useThreadMessages = ({
   const setLoadError = useThreadStore((state) => state.setLoadError);
   const reloadToken = useThreadStore((state) => state.reloadToken);
   const isDraftThread = useThreadStore((state) => state.isDraftThread);
-  const isRuntimeConnected =
-    copilotkit.runtimeConnectionStatus === "connected";
+  const isRuntimeConnected = copilotkit.runtimeConnectionStatus === "connected";
 
   useEffect(() => {
     if (!threadId) {

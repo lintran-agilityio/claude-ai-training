@@ -102,3 +102,42 @@ evalite<OnDateCase, CaseResult, OnDateCase>(
     ],
   },
 );
+
+// --- Arguments (upcomingCheckIns) --------------------------------------
+type UpcomingCheckInsCase = { name: string; message: string };
+
+const upcomingCheckInsCases: UpcomingCheckInsCase[] = [
+  {
+    name: "'what are my upcoming check-ins?' → upcomingCheckIns, no onDate",
+    message: "What are my upcoming check-ins?",
+  },
+];
+
+evalite<UpcomingCheckInsCase, CaseResult, string>(
+  "get_bookings — upcoming check-ins language sets upcomingCheckIns and never onDate",
+  {
+    data: () =>
+      upcomingCheckInsCases.map((c) => ({ input: c, expected: "get_bookings" })),
+    task: (input) => runCase(input.message),
+    scorers: [
+      {
+        name: "Called get_bookings with upcomingCheckIns: true and no onDate",
+        scorer: ({ output }) => {
+          const args = toolCallArgs(output.toolCalls, "get_bookings");
+          if (!args) return scoreResult(false, "get_bookings was never called");
+          return scoreResult(
+            args.upcomingCheckIns === true && argMatches(args.onDate, undefined),
+            `expected upcomingCheckIns=true and onDate unset, got ${JSON.stringify(args)}`,
+          );
+        },
+      },
+    ],
+    columns: ({ input, output }) => [
+      { label: "Message", value: input.message },
+      {
+        label: "get_bookings args",
+        value: JSON.stringify(toolCallArgs(output.toolCalls, "get_bookings") ?? {}),
+      },
+    ],
+  },
+);

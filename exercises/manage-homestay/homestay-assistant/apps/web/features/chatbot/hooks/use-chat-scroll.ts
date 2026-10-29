@@ -83,5 +83,7 @@ export const useChatScroll = ({
         frameRef.current = null;
       }
     };
+    // schedulePin is intentionally left out: adding it would re-run the observers on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messageCount, contentKey, isRunning]);
 };

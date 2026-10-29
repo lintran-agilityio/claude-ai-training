@@ -3,7 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { extractRoomNameQuery } from '@repo/utils';
-import { toDateKey, startOfDay, ACTIVE_BOOKING_STATUSES } from '@/utils';
+import {
+  toDateKey,
+  startOfDay,
+  ACTIVE_BOOKING_STATUSES,
+  OCCUPYING_BOOKING_STATUSES,
+} from '@/utils';
 import { ListBookingsQueryDto } from '@/modules/booking/dto/list-bookings-query.dto';
 import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingStatus } from '../../../types/enum';
@@ -47,7 +52,9 @@ export class BookingRepository {
       // significant word to appear in the name. A phrase that is filler
       // only ("my room") names no specific room, so no filter is applied
       // instead of one that would match nothing and hide every booking.
-      const roomNameTokens = extractRoomNameQuery(filters.roomName).split(' ').filter(Boolean);
+      const roomNameTokens = extractRoomNameQuery(filters.roomName)
+        .split(' ')
+        .filter(Boolean);
 
       roomNameTokens.forEach((token, index) => {
         query.andWhere(`LOWER(room.name) LIKE LOWER(:roomNameToken${index})`, {
@@ -75,6 +82,21 @@ export class BookingRepository {
         .andWhere('booking.checkInDate < :dateTo', { dateTo: filters.dateTo })
         .andWhere('booking.checkOutDate > :dateFrom', {
           dateFrom: filters.dateFrom,
+        });
+    }
+
+    // Check-in falls in [checkInFrom, checkInTo) and the guest has not checked
+    // in yet - drives the "upcoming check-ins" summary. Both must be present.
+    if (filters.checkInFrom && filters.checkInTo) {
+      query
+        .andWhere('booking.checkInDate >= :checkInFrom', {
+          checkInFrom: filters.checkInFrom,
+        })
+        .andWhere('booking.checkInDate < :checkInTo', {
+          checkInTo: filters.checkInTo,
+        })
+        .andWhere('booking.status IN (:...upcomingStatuses)', {
+          upcomingStatuses: ACTIVE_BOOKING_STATUSES,
         });
     }
 
@@ -135,7 +157,7 @@ export class BookingRepository {
       .createQueryBuilder('booking')
       .where('booking.roomId = :roomId', { roomId })
       .andWhere('booking.status IN (:...activeStatuses)', {
-        activeStatuses: ACTIVE_BOOKING_STATUSES,
+        activeStatuses: OCCUPYING_BOOKING_STATUSES,
       })
       .andWhere('booking.checkInDate < :checkOutDate', {
         checkOutDate: toDateKey(checkOutDate),

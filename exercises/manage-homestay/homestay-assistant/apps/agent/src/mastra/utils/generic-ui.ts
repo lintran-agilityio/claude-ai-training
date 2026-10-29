@@ -4,6 +4,7 @@
  */
 import {
   TOOL_PURPOSE,
+  UPCOMING_CHECK_IN_DAYS,
   type FindRoomPurpose,
   type GetBookingsPurpose,
 } from "@repo/constants";
@@ -137,6 +138,7 @@ export type GetBookingsReplyPurpose = GetBookingsPurpose | undefined;
 export const buildGetBookingsReplyHint = (
   bookingCount: number,
   purpose: GetBookingsReplyPurpose,
+  upcomingCheckIns?: boolean,
 ): string => {
   if (purpose === TOOL_PURPOSE.GET_BOOKINGS.RESOLVE) {
     if (!bookingCount) {
@@ -146,10 +148,16 @@ export const buildGetBookingsReplyHint = (
   }
 
   if (!bookingCount) {
-    return "No matching active bookings. Reply with ONE short sentence that there are no matching active bookings.";
+    return upcomingCheckIns
+      ? `No upcoming check-ins in the next ${UPCOMING_CHECK_IN_DAYS} days. Reply with ONE short sentence that there are no upcoming check-ins in the next ${UPCOMING_CHECK_IN_DAYS} days.`
+      : "No matching active bookings. Reply with ONE short sentence that there are no matching active bookings.";
   }
 
-  return 'Booking cards are already rendered in chat. Reply with exactly ONE very short sentence in the guest\'s language acknowledging the list or offering help. Do NOT mention the count or restate names, dates, guests, prices, statuses, or IDs. Do NOT use bullets or markdown. English example: "Your current bookings are shown; let me know if you need help."';
+  const example = upcomingCheckIns
+    ? "Your upcoming check-ins are shown; let me know if you need help."
+    : "Your current bookings are shown; let me know if you need help.";
+
+  return `Booking cards are already rendered in chat. Reply with exactly ONE very short sentence in the guest's language acknowledging the list or offering help. Do NOT mention the count or restate names, dates, guests, prices, statuses, or IDs. Do NOT use bullets or markdown. English example: "${example}"`;
 };
 
 /**
