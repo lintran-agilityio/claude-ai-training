@@ -8,6 +8,7 @@ import { BookingEntity } from '@/modules/booking/entities/booking.entity';
 import { BookingRepository } from '@/modules/booking/repositories/booking.repository';
 import { BookingService } from '@/modules/booking/services/booking.service';
 import { RoomEntity } from '@/modules/rooms/entities/room.entity';
+import { UsersService } from '@/modules/users/services/users.service';
 import { RoomsRepository } from '@/modules/rooms/repositories/rooms.repository';
 import { BookingStatus } from '../../../types/enum';
 
@@ -38,7 +39,7 @@ describe('BookingService.cancel', () => {
     new BookingService(
       bookingRepository as unknown as BookingRepository,
       roomsRepository as unknown as RoomsRepository,
-      {} as never,
+      {} as UsersService,
     );
 
   beforeEach(() => {
@@ -141,7 +142,7 @@ describe('BookingService.update (regression guard for BUG-HS-005)', () => {
       {
         findById: jest.fn().mockResolvedValue(room),
       } as unknown as RoomsRepository,
-      {} as never,
+      {} as UsersService,
     );
 
     await expect(
@@ -191,7 +192,9 @@ describe('BookingService.create', () => {
       {
         findById: jest.fn().mockResolvedValue(room),
       } as unknown as RoomsRepository,
-      { findOne: jest.fn().mockResolvedValue({ id: userId }) } as never,
+      {
+        findOrCreate: jest.fn().mockResolvedValue({ id: userId }),
+      } as unknown as UsersService,
     );
   });
 
@@ -295,7 +298,7 @@ describe('BookingService.update status transitions', () => {
       {
         findById: jest.fn().mockResolvedValue(room),
       } as unknown as RoomsRepository,
-      {} as never,
+      {} as UsersService,
     );
     return { service, bookingRepository };
   };
