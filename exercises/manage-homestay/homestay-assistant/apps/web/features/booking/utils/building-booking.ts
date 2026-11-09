@@ -1,4 +1,5 @@
 import {
+  computePriceBreakdown,
   countNightOfDates,
   formatPrice,
   formatShortDateForDisplay,
@@ -23,7 +24,11 @@ const calculateStayTotal = (
   stay: ModifyStaySnapshot,
   pricePerNight: number,
 ): number =>
-  countNightOfDates(stay.checkInDate, stay.checkOutDate) * pricePerNight;
+  computePriceBreakdown({
+    pricePerNight,
+    guests: stay.guests,
+    nights: countNightOfDates(stay.checkInDate, stay.checkOutDate),
+  }).total;
 
 const changeRow = (
   label: string,

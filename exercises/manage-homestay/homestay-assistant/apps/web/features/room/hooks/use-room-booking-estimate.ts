@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import {
+  computePriceBreakdown,
   countNightOfDates,
   formatPrice,
   isCheckOutAfterCheckIn,
@@ -38,9 +39,13 @@ export const useRoomBookingEstimate = ({
     }
 
     return formatPrice(
-      countNightOfDates(checkInDate, checkOutDate) * pricePerNight,
+      computePriceBreakdown({
+        pricePerNight,
+        guests,
+        nights: countNightOfDates(checkInDate, checkOutDate),
+      }).total,
     );
-  }, [canProceed, checkInDate, checkOutDate, pricePerNight]);
+  }, [canProceed, checkInDate, checkOutDate, pricePerNight, guests]);
 
   return { hasValidDateRange, canProceed, estimatedTotal };
 };

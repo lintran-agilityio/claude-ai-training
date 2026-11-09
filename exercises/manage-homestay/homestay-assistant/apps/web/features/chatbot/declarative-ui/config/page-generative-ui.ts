@@ -42,6 +42,7 @@ const MASTRA_BACKEND_TOOL_NAMES = [
   GET.ROOMS,
   GET.FIND_ROOM,
   GET.COMPARE_ROOMS,
+  GET.CALCULATE_PRICE,
   BOOKING.GET_ROOM_BY_ID,
 ] as const;
 
@@ -53,6 +54,7 @@ const RENDER_BACKEND_TOOLS = [
   BOOKING.UPDATE_BOOKING,
   BOOKING.GET_ROOM_BY_ID,
   GET.FIND_ROOM,
+  GET.CALCULATE_PRICE,
   // Renders nothing except a BookingUnavailable card when a MODIFY stated-change
   // availability probe fails (see FindBookingByIdNotice); silent otherwise.
   BOOKING.FIND_BY_ID,

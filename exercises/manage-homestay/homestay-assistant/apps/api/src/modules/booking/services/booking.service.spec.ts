@@ -13,7 +13,26 @@ import { BookingStatus } from '../../../types/enum';
 
 // `@repo/utils` and `@repo/constants` ship as ESM, which jest (CommonJS) cannot
 // load; the cancel/update paths under test never use them.
-jest.mock('@repo/utils', () => ({ extractRoomNameQuery: jest.fn() }));
+// Mirrors packages/utils/price.ts (2 base guests, 100k/extra guest/night,
+// 150k cleaning, 8% tax) — the real module is ESM and cannot load under jest.
+jest.mock('@repo/utils', () => ({
+  extractRoomNameQuery: jest.fn(),
+  computePriceBreakdown: ({
+    pricePerNight,
+    nights,
+    guests,
+  }: {
+    pricePerNight: number;
+    nights: number;
+    guests: number;
+  }) => {
+    const taxable =
+      nights * pricePerNight +
+      Math.max(0, guests - 2) * 100_000 * nights +
+      150_000;
+    return { total: taxable + Math.round(taxable * 0.08) };
+  },
+}));
 jest.mock('@repo/constants', () => ({
   FIND_ROOM_SORT: {},
   FIND_ROOM_SORT_VALUES: [],
@@ -57,7 +76,7 @@ describe('BookingService.cancel', () => {
       checkInDate: '2030-01-10',
       checkOutDate: '2030-01-12',
       guests: 3,
-      totalPrice: 200,
+      totalPrice: 378,
       status: BookingStatus.CONFIRMED,
       cancelledAt: null,
     } as unknown as BookingEntity;
@@ -91,7 +110,7 @@ describe('BookingService.cancel', () => {
         status: BookingStatus.CANCELLED,
         cancelledAt: expect.any(Date) as Date,
         guests: 3,
-        totalPrice: 200,
+        totalPrice: 378,
       }),
     );
   });
@@ -129,7 +148,7 @@ describe('BookingService.update (regression guard for BUG-HS-005)', () => {
       checkInDate: '2030-01-10',
       checkOutDate: '2030-01-12',
       guests: 2,
-      totalPrice: 200,
+      totalPrice: 378,
       status: BookingStatus.CONFIRMED,
     };
     const bookingRepository = {
@@ -231,9 +250,9 @@ describe('BookingService.create', () => {
   });
 
   it.each([
-    ['1 night', '2030-01-10', '2030-01-11', 100],
-    ['2 nights', '2030-01-10', '2030-01-12', 200],
-    ['5 nights across a month end', '2030-01-29', '2030-02-03', 500],
+    ['1 night', '2030-01-10', '2030-01-11', 162108],
+    ['2 nights', '2030-01-10', '2030-01-12', 162216],
+    ['5 nights across a month end', '2030-01-29', '2030-02-03', 162540],
   ])('prices per night: %s', async (_label, checkIn, checkOut, totalPrice) => {
     await service.create(dto(checkIn, checkOut), userId);
 
@@ -279,7 +298,7 @@ describe('BookingService.update status transitions', () => {
       checkInDate: '2030-01-10',
       checkOutDate: '2030-01-12',
       guests: 2,
-      totalPrice: 200,
+      totalPrice: 378,
       status,
       cancelledAt: null,
     } as unknown as BookingEntity;

@@ -19,3 +19,4 @@ export * from "./booking";
 export * from "./book-form-prefill";
 export * from "./modify-booking";
 export * from "./step-machine";
+export * from "./price";

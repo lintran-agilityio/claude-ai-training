@@ -73,8 +73,8 @@ const buildBookResolveReplyHint = (matchCount: number): string => {
         "Room resolved for booking — Room List is suppressed (do NOT say cards were shown). " +
         "The platform already probed availability for this room and deterministically forces the next step " +
         "— you cannot choose a different one: " +
-        "confirm_booking when check-in date AND guest count are both known and the room is free (result.availability present with available:true) — " +
-        "pass { roomId, checkInDate, guests } from result.availability plus a checkOutDate reflecting any stay length " +
+        "calculate_price (then confirm_booking) when check-in date AND guest count are both known and the room is free (result.availability present with available:true) — " +
+        "call calculate_price with purpose:\"booking\" and { roomId, checkInDate, guests } from result.availability plus a checkOutDate reflecting any stay length " +
         "stated in the LATEST message (default result.availability.checkOutDate when none was stated); " +
         "OR get_room_by_id to open the Booking Form when either check-in date or guest count is still unknown " +
         "(no result.availability) — pass whichever of checkInDate/guests IS stated as its args so the form opens prefilled. " +

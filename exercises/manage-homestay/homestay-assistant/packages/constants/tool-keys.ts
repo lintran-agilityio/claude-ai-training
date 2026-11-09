@@ -13,6 +13,12 @@ export const TOOL_KEYS = {
      * result; no LLM designs the surface or touches room data.
      */
     COMPARE_ROOMS: "compare_rooms",
+    /**
+     * Mastra registration / createTool id. Read-only price quote for a room +
+     * stay (nights, guests, extra-guest surcharge, cleaning fee, tax) — call it
+     * before confirm_booking so the guest sees the total first.
+     */
+    CALCULATE_PRICE: "calculate_price",
   },
   BOOKING: {
     /** Guest-facing "show/list my bookings" — always the full list, no purpose. */

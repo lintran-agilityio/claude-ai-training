@@ -7,6 +7,7 @@ import {
 } from "@copilotkit/react-core/v2";
 
 import { AGENT_KEYS, TOOL_KEYS } from "@repo/constants";
+import { z } from "zod";
 import {
   findRoomInputSchema,
   getRoomByIdInputSchema,
@@ -22,6 +23,10 @@ import {
   FindRoomNotice,
   GetRoomByIdNotice,
 } from "@/features/room/components";
+import {
+  PriceBreakdownNotice,
+  type PriceBreakdownResult,
+} from "@/features/booking/components";
 import type {
   FindRoomResult,
   GetRoomByIdResult,
@@ -40,6 +45,28 @@ export const RoomToolsProvider = () => {
           status={status}
           result={result as GetRoomByIdResult | string | null}
           toolCallId={toolCallId}
+        />
+      ),
+    },
+    [],
+  );
+
+  useRenderTool(
+    {
+      agentId: AGENT_KEYS.HOMESTAY_ASSISTANT,
+      name: TOOL_KEYS.GET.CALCULATE_PRICE,
+      parameters: z.object({
+        roomId: z.string(),
+        checkInDate: z.string(),
+        checkOutDate: z.string(),
+        guests: z.number(),
+        purpose: z.enum(["quote", "booking"]).optional(),
+      }),
+      render: ({ status, result, parameters }) => (
+        <PriceBreakdownNotice
+          purpose={(parameters as { purpose?: string } | undefined)?.purpose}
+          status={status}
+          result={result as PriceBreakdownResult | string | null}
         />
       ),
     },

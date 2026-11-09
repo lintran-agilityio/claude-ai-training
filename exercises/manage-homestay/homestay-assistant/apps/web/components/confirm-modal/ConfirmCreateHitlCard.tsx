@@ -17,7 +17,7 @@ import {
   isHitlDecisionTerminal,
   type HitlDecisionStatus,
 } from "@/features/booking/utils";
-import { countNightOfDates } from "@repo/utils";
+import { computePriceBreakdown, countNightOfDates } from "@repo/utils";
 import { HITL_DECISION_STATUS } from "@/constants";
 import { MODEL_NAME } from "@repo/types";
 
@@ -137,7 +137,11 @@ export const ConfirmCreateHitlCard = ({
 }: ConfirmCreateHitlCardProps) => {
   const actionsDisabled = !canRespond || isSubmitting;
   const nights = countNightOfDates(checkInDate, checkOutDate);
-  const totalPrice = totalPriceOverride ?? nights * pricePerNight;
+  const breakdown = {
+    ...computePriceBreakdown({ pricePerNight, nights, guests }),
+    pricePerNight,
+  };
+  const totalPrice = totalPriceOverride ?? breakdown.total;
   const isModify = MODIFY_PENDING_TITLES.has(title);
   const summary = (
     <StaySummary
@@ -146,6 +150,7 @@ export const ConfirmCreateHitlCard = ({
       checkOutDate={checkOutDate}
       guests={guests}
       totalPrice={totalPrice}
+      breakdown={isModify ? undefined : breakdown}
     />
   );
 

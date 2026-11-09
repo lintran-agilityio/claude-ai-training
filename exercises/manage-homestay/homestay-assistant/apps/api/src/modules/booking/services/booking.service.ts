@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 
 import { BookingStatus } from '../../../types/enum';
 import { UserEntity } from '@/database/entities/user.entity';
+import { computePriceBreakdown } from '@repo/utils';
 import { parseDateRange, toDateKey } from '@/utils';
 import { RoomsRepository } from '@/modules/rooms/repositories/rooms.repository';
 import { RoomEntity } from '@/modules/rooms/entities/room.entity';
@@ -84,7 +85,11 @@ export class BookingService {
       checkInDate: toDateKey(checkInDate),
       checkOutDate: toDateKey(checkOutDate),
       guests: dto.guests,
-      totalPrice: nights * room.pricePerNight,
+      totalPrice: computePriceBreakdown({
+        pricePerNight: room.pricePerNight,
+        nights,
+        guests: dto.guests,
+      }).total,
       status,
       updatedAt: now,
     });
@@ -214,7 +219,11 @@ export class BookingService {
       checkInDate: toDateKey(checkInDate),
       checkOutDate: toDateKey(checkOutDate),
       guests: nextGuests,
-      totalPrice: nights * room.pricePerNight,
+      totalPrice: computePriceBreakdown({
+        pricePerNight: room.pricePerNight,
+        nights,
+        guests: nextGuests,
+      }).total,
       status: nextStatus,
       updatedAt: now,
     });

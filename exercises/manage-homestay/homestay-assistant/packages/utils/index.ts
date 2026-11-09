@@ -10,3 +10,4 @@ export * from "./room-sort.js";
 export * from "./transcript.js";
 export * from "./abort.js";
 export * from "./blocked-messages.js";
+export * from "./price.js";

@@ -440,7 +440,7 @@ const resolveFindRoomBookTransition = (
     // the authoritative gate and surfaces a conflict on the same HITL card.
     return probedUnavailable
       ? { type: "stop" }
-      : { type: "call", toolName: TOOL_KEYS.ACTION.CONFIRM_BOOKING };
+      : { type: "call", toolName: TOOL_KEYS.GET.CALCULATE_PRICE };
   }
 
   // `nights` is stashed even with no check-in date — that is the whole point of
@@ -487,6 +487,14 @@ const resolveBookingWorkflowTransition = (
   // `no_candidates` painted nothing: leave the model free to search or ask.
   if (toolName === TOOL_KEYS.GET.COMPARE_ROOMS) {
     return outputRecord.status === "rendered" ? { type: "stop" } : undefined;
+  }
+
+  // Price quote: inside the BOOK flow the guest sees the breakdown, then
+  // confirm_booking runs. A plain quote ends the turn after the card renders.
+  if (toolName === TOOL_KEYS.GET.CALCULATE_PRICE) {
+    return asUnknownRecord(input)?.purpose === "booking"
+      ? { type: "call", toolName: TOOL_KEYS.ACTION.CONFIRM_BOOKING }
+      : { type: "stop" };
   }
 
   const followUpTool = CONFIRMATION_FOLLOW_UPS[toolName];
